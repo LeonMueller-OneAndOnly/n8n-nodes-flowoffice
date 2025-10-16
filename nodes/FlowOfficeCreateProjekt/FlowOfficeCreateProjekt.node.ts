@@ -16,8 +16,6 @@ import {
 import { buildOptions_statusLabels } from '../../lib/buildStatusOptions';
 import { fetchBoards } from '../../lib/fetchBoards';
 
-// Base URL resolution handled in fetchBoards
-
 export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
 		loadOptions: {
