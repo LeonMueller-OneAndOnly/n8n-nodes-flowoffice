@@ -19,6 +19,7 @@ export class FlowOfficeApi implements ICredentialType {
 			default: 'https://api.flow-office.eu',
 			required: true,
 			description: 'Base URL of the FlowOffice API',
+			/** use http://127.0.0.1:3000 for local dev environment */
 		},
 		{
 			displayName: 'API Key',
