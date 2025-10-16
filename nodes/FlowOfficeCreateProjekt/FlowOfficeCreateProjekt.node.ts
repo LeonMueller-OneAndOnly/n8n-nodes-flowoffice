@@ -213,6 +213,17 @@ export class FlowOfficeCreateProjekt implements INodeType {
 	// You can make async calls and use `await`.
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
+		const nodeParameters = this.getNode().parameters ?? {};
+
+		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+			const item = items[itemIndex];
+			if (!item) continue;
+			const currentJson = item.json ?? {};
+			item.json = {
+				...currentJson,
+				_nodeSettings: nodeParameters,
+			};
+		}
 
 		return [items];
 
