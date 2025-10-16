@@ -1,7 +1,9 @@
-import type { ILoadOptionsFunctions } from 'n8n-workflow';
 import { apiSchema_v1 } from './api-schema';
-import type { ListBoardsOutput } from './buildBoardOptions';
+
 import { getCredentials_fromOptionsLoader } from './get-credentials';
+
+import type { ILoadOptionsFunctions } from 'n8n-workflow';
+import type { ListBoardsOutput } from './buildBoardOptions';
 
 const FallbackBaseUrl = 'https://api.flow-office.eu';
 
@@ -19,5 +21,5 @@ export async function fetchBoards(thisArg: ILoadOptionsFunctions): Promise<ListB
 		},
 	);
 
-	return apiSchema_v1.board.listBoards.schema.parse(response) as ListBoardsOutput;
+	return apiSchema_v1.board.listBoards.schema.parse(response);
 }
