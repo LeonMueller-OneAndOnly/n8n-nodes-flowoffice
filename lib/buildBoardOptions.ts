@@ -54,3 +54,78 @@ export function buildOptions_columnsForBoard(
 		description: `Column type: ${col.columnType}`,
 	}));
 }
+
+export function buildOptions_columnsForBoardFiltered(
+	parsed: ListBoardsOutput,
+	boardId: number,
+	allowedTypes: ReadonlyArray<
+		| 'name'
+		| 'text'
+		| 'number'
+		| 'date'
+		| 'checkbox'
+		| 'interval'
+		| 'phone'
+		| 'email'
+		| 'address'
+		| 'rating-stars'
+		| 'erneut-kontaktieren'
+		| 'link'
+		| 'personName'
+		| 'zeitauswertung'
+		| 'formel'
+		| 'status'
+		| 'dokument'
+		| 'kunde'
+		| 'teamMember'
+		| 'aufgaben'
+		| 'cloud'
+		| 'lager'
+	>,
+): INodePropertyOptions[] {
+	const board = getBoardById(parsed, boardId);
+	if (!board) return [];
+	return board.columnSchema
+		.filter((col) => allowedTypes.includes(col.columnType as (typeof allowedTypes)[number]))
+		.map((col) => ({
+			name: `${col.label} (${col.columnType})`,
+			value: col.columnKey,
+			description: `Column type: ${col.columnType}`,
+		}));
+}
+
+export function buildOptions_columnsForBoard_statusOnly(
+	parsed: ListBoardsOutput,
+	boardId: number,
+): INodePropertyOptions[] {
+	return buildOptions_columnsForBoardFiltered(parsed, boardId, ['status']);
+}
+
+export function buildOptions_columnsForBoard_nonStatus(
+	parsed: ListBoardsOutput,
+	boardId: number,
+): INodePropertyOptions[] {
+	return buildOptions_columnsForBoardFiltered(parsed, boardId, [
+		'name',
+		'text',
+		'number',
+		'date',
+		'checkbox',
+		'interval',
+		'phone',
+		'email',
+		'address',
+		'rating-stars',
+		'erneut-kontaktieren',
+		'link',
+		'personName',
+		'zeitauswertung',
+		'formel',
+		'dokument',
+		'kunde',
+		'teamMember',
+		'aufgaben',
+		'cloud',
+		'lager',
+	]);
+}

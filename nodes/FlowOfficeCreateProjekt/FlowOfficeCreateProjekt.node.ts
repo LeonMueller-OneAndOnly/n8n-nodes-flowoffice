@@ -8,7 +8,11 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import { buildOptions_boardId, buildOptions_columnsForBoard } from '../../lib/buildBoardOptions';
+import {
+	buildOptions_boardId,
+	buildOptions_columnsForBoard_nonStatus,
+	buildOptions_columnsForBoard_statusOnly,
+} from '../../lib/buildBoardOptions';
 import { buildOptions_statusLabels } from '../../lib/buildStatusOptions';
 import { fetchBoards } from '../../lib/fetchBoards';
 
@@ -21,7 +25,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				const boards = await fetchBoards(this);
 				return buildOptions_boardId(boards);
 			},
-			async listColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			async listColumnsNonStatus(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
 				if (selectedBoardId === undefined || selectedBoardId === '') return [];
 
@@ -32,7 +36,20 @@ export class FlowOfficeCreateProjekt implements INodeType {
 						? parseInt(selectedBoardId, 10)
 						: (selectedBoardId as number);
 
-				return buildOptions_columnsForBoard(boards, boardIdNum);
+				return buildOptions_columnsForBoard_nonStatus(boards, boardIdNum);
+			},
+			async listColumnsStatusOnly(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
+				if (selectedBoardId === undefined || selectedBoardId === '') return [];
+
+				const boards = await fetchBoards(this);
+
+				const boardIdNum =
+					typeof selectedBoardId === 'string'
+						? parseInt(selectedBoardId, 10)
+						: (selectedBoardId as number);
+
+				return buildOptions_columnsForBoard_statusOnly(boards, boardIdNum);
 			},
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
@@ -113,7 +130,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								type: 'options',
 								required: true,
 								typeOptions: {
-									loadOptionsMethod: 'listColumns',
+									loadOptionsMethod: 'listColumnsNonStatus',
 									loadOptionsDependsOn: ['projekt-board'],
 								},
 								description:
@@ -136,7 +153,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 								typeOptions: {
 									loadOptionsMethod: 'listStatusLabels',
-									loadOptionsDependsOn: ['projekt-board', 'columnMappings'],
+									loadOptionsDependsOn: ['projekt-board', 'statusColumnMappings'],
 								},
 							},
 							{
