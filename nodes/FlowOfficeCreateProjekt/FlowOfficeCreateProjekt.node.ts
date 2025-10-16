@@ -153,7 +153,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								name: 'isStatus',
 								type: 'boolean',
 								default: false,
-								hint: 'Toggle on only for status-type columns',
+								// hint: 'Toggle on only for status-type columns',
 							},
 							{
 								displayName: 'Value',
