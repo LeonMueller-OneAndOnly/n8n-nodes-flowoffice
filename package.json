@@ -33,7 +33,7 @@
 		"strict": true,
 		"credentials": [],
 		"nodes": [
-			"dist/nodes/Example/Example.node.js"
+			"dist/nodes/FlowOfficeCreateProjekt/FlowOfficeCreateProjekt.node.js"
 		]
 	},
 	"devDependencies": {

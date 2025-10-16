@@ -32,7 +32,7 @@ module.exports = {
 	/**
 	 * https://prettier.io/docs/en/options.html#quotes
 	 */
-	singleQuote: true,
+	singleQuote: false,
 
 	/**
 	 * https://prettier.io/docs/en/options.html#quote-props

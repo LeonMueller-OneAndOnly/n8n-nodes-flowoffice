@@ -6,16 +6,19 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-export class Example implements INodeType {
+export class FlowOfficeCreateProjekt implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Example',
-		name: 'example',
-		icon: { light: 'file:example.svg', dark: 'file:example.dark.svg' },
+		displayName: 'FlowOffice: Create Projekt',
+		name: 'flowOfficeCreateProjekt',
+		icon: {
+			light: 'file:FlowOfficeCreateProjekt.svg',
+			dark: 'file:FlowOfficeCreateProjekt.dark.svg',
+		},
 		group: ['input'],
 		version: 1,
-		description: 'Basic Example Node',
+		description: 'Create a projekt in FlowOffice',
 		defaults: {
-			name: 'Example',
+			name: 'FlowOffice: Create Projekt',
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
@@ -24,12 +27,13 @@ export class Example implements INodeType {
 			// Node properties which the user gets displayed and
 			// can change on the node.
 			{
-				displayName: 'My String',
-				name: 'myString',
-				type: 'string',
-				default: '',
-				placeholder: 'Placeholder value',
-				description: 'The description text',
+				displayName: 'Board',
+				name: 'projekt-board',
+				type: 'options',
+				options: [{ displayName: 'Leads', value: 'board-id:123', name: 'board-ID:123' }],
+				default: 'board-id:123',
+				// placeholder: 'Placeholder value',
+				// description: 'The description text',
 			},
 		],
 	};
