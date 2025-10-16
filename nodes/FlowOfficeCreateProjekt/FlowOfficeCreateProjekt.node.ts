@@ -54,11 +54,20 @@ export class FlowOfficeCreateProjekt implements INodeType {
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
 				if (selectedBoardId === undefined || selectedBoardId === '') return [];
-				const mapping = this.getCurrentNodeParameter('statusColumnMappings') as
-					| { mappings?: Array<{ columnKey?: string }> }
-					| undefined;
 
-				const columnKey = mapping?.mappings?.[mapping.mappings.length - 1]?.columnKey;
+				// Try to get the sibling columnKey from the current mapping row first
+				let columnKey = this.getCurrentNodeParameter('columnKey') as string | undefined;
+
+				// Fallback to last mapping's columnKey if sibling lookup is not available
+				if (!columnKey) {
+					const mapping = this.getCurrentNodeParameter('statusColumnMappings') as
+						| { mappings?: Array<{ columnKey?: string }> }
+						| undefined;
+					columnKey = mapping?.mappings?.[mapping.mappings.length - 1]?.columnKey as
+						| string
+						| undefined;
+				}
+
 				if (!columnKey) return [];
 
 				const boards = await fetchBoards(this);
@@ -66,7 +75,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					typeof selectedBoardId === 'string'
 						? parseInt(selectedBoardId, 10)
 						: (selectedBoardId as number);
-				return buildOptions_statusLabels(boards, boardIdNum, columnKey as string);
+				return buildOptions_statusLabels(boards, boardIdNum, columnKey);
 			},
 		},
 	};
@@ -186,7 +195,11 @@ export class FlowOfficeCreateProjekt implements INodeType {
 									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 								typeOptions: {
 									loadOptionsMethod: 'listStatusLabels',
-									loadOptionsDependsOn: ['projekt-board', 'statusColumnMappings'],
+									loadOptionsDependsOn: [
+										'projekt-board',
+										// Refresh when the selected status column changes
+										'statusColumnMappings.mappings.columnKey',
+									],
 								},
 							},
 						],
