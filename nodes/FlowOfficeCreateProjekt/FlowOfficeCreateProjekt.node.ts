@@ -110,9 +110,10 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				},
 			},
 			{
-				displayName: 'Column Mappings (Non-Status)',
+				displayName: 'Column Mappings (Non-Status-Columns)',
 				name: 'columnMappings',
 				description: 'Map input fields to non-status columns',
+				hint: 'Note: Status columns are mapped separately below',
 				type: 'fixedCollection',
 				placeholder: 'Add column mapping',
 				default: { mappings: [] },
@@ -148,10 +149,12 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					},
 				],
 			},
+
 			{
-				displayName: 'Column Mappings (Status Only)',
+				displayName: 'Column Mappings (Status-Columns Only)',
 				name: 'statusColumnMappings',
-				description: 'Map input fields to status columns',
+				description: 'Map input fields to status-columns only',
+				hint: 'Note: Only status columns are available here; non-status columns are above',
 				type: 'fixedCollection',
 				placeholder: 'Add status column mapping',
 				default: { mappings: [] },
