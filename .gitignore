@@ -1,2 +1,4 @@
 node_modules
 dist
+lib/api-schema-bundled/helper.js.map
+lib/api-schema-bundled/api.ts.map

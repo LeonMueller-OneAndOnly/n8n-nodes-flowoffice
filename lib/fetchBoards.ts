@@ -1,4 +1,4 @@
-import { apiSchema_v1 } from './api-schema';
+import { apiSchema_v1 } from './api-schema-bundled/api';
 
 import { getCredentials_fromOptionsLoader } from './get-credentials';
 

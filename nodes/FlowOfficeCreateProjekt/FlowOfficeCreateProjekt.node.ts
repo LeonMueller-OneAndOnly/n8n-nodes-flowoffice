@@ -79,6 +79,32 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				if (!columnKey) return [];
 				return buildOptions_statusLabels(boards, boardIdNum, columnKey);
 			},
+			async getSelectedColumnType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
+				const columnKey = this.getCurrentNodeParameter('columnKey') as string | undefined;
+				if (selectedBoardId === undefined || selectedBoardId === '' || !columnKey) return [];
+
+				const boards = await fetchBoards(this);
+				const boardIdNum =
+					typeof selectedBoardId === 'string'
+						? parseInt(selectedBoardId, 10)
+						: (selectedBoardId as number);
+
+				// find selected column's type
+				const board = boards.boardGroups
+					.flatMap((g) => g.boards)
+					.flatMap((b) => (b.type === 'board' ? [b.board] : b.boards))
+					.find((b) => b.boardId === boardIdNum);
+				const col = board?.columnSchema.find((c) => c.columnKey === columnKey);
+				if (!col) return [];
+				return [
+					{
+						name: col.columnType,
+						value: col.columnType,
+						description: `Detected type for ${columnKey}`,
+					},
+				];
+			},
 		},
 	};
 	description: INodeTypeDescription = {
@@ -149,11 +175,22 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								default: '',
 							},
 							{
-								displayName: 'Is Status Column',
-								name: 'isStatus',
-								type: 'boolean',
-								default: false,
-								// hint: 'Toggle on only for status-type columns',
+								displayName: 'Column Type (Internal) Name or ID',
+								name: 'columnType',
+								type: 'options',
+								default: '',
+								typeOptions: {
+									loadOptionsMethod: 'getSelectedColumnType',
+									loadOptionsDependsOn: ['projekt-board', 'columnMappings.mappings.columnKey'],
+								},
+								description:
+									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+								displayOptions: {
+									show: {
+										// never show this helper field to users
+										columnKey: ['__never__'],
+									},
+								},
 							},
 							{
 								displayName: 'Value',
@@ -163,7 +200,29 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								description: 'Use expressions to map from input JSON (non-status columns)',
 								displayOptions: {
 									show: {
-										isStatus: [false],
+										columnType: [
+											'name',
+											'text',
+											'number',
+											'date',
+											'checkbox',
+											'interval',
+											'phone',
+											'email',
+											'address',
+											'rating-stars',
+											'erneut-kontaktieren',
+											'link',
+											'personName',
+											'zeitauswertung',
+											'formel',
+											'dokument',
+											'kunde',
+											'teamMember',
+											'aufgaben',
+											'cloud',
+											'lager',
+										],
 									},
 								},
 							},
@@ -180,12 +239,11 @@ export class FlowOfficeCreateProjekt implements INodeType {
 										'projekt-board',
 										// Refresh when the selected column changes
 										'columnMappings.mappings.columnKey',
-										'columnMappings.mappings.isStatus',
 									],
 								},
 								displayOptions: {
 									show: {
-										isStatus: [true],
+										columnType: ['status'],
 									},
 								},
 							},
@@ -208,9 +266,23 @@ export class FlowOfficeCreateProjekt implements INodeType {
 			const item = items[itemIndex];
 			if (!item) continue;
 			const currentJson = item.json ?? {};
+			const evaluatedParameters: Record<string, unknown> = {};
+			for (const key of Object.keys(nodeParameters)) {
+				try {
+					evaluatedParameters[key] = this.getNodeParameter(
+						key as string,
+						itemIndex,
+						(nodeParameters as Record<string, unknown>)[key],
+					);
+				} catch {
+					// Fallback to raw parameter if evaluation is not applicable
+					evaluatedParameters[key] = (nodeParameters as Record<string, unknown>)[key];
+				}
+			}
 			item.json = {
 				...currentJson,
 				_nodeSettings: nodeParameters,
+				_evaluatedSettings: evaluatedParameters,
 			};
 		}
 

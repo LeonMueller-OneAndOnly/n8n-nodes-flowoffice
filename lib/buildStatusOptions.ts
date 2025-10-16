@@ -1,7 +1,7 @@
 import type { INodePropertyOptions } from 'n8n-workflow';
 import type { ListBoardsOutput } from './buildBoardOptions';
 import { getBoardById } from './buildBoardOptions';
-import { parseStatus_columnJson } from './api-schema/column-json';
+import { helper } from './api-schema-bundled/helper';
 
 export function buildOptions_statusLabels(
 	parsed: ListBoardsOutput,
@@ -13,6 +13,6 @@ export function buildOptions_statusLabels(
 	const column = board.columnSchema.find((c) => c.columnKey === columnKey);
 	if (!column || column.columnType !== 'status') return [];
 
-	const { labels } = parseStatus_columnJson({ columnJSON: column.columnJSON ?? '' });
+	const { labels } = helper.parseStatus_columnJson({ columnJSON: column.columnJSON ?? '' });
 	return labels.map((l) => ({ name: l.label, value: l.enumKey, description: `ID: ${l.enumKey}` }));
 }

@@ -1,8 +1,10 @@
-import type { INodePropertyOptions } from 'n8n-workflow';
-import type { z } from 'zod';
-import { ZListBoardsOutput } from './api-schema/board';
+import { apiSchema_v1 } from './api-schema-bundled/api';
 
-export type ListBoardsOutput = z.infer<typeof ZListBoardsOutput>;
+import type { INodePropertyOptions } from 'n8n-workflow';
+
+import type { z } from 'zod';
+
+export type ListBoardsOutput = z.infer<typeof apiSchema_v1.board.listBoards.schema>;
 
 export function buildOptions_boardId(parsed: ListBoardsOutput): INodePropertyOptions[] {
 	const options: INodePropertyOptions[] = [];
