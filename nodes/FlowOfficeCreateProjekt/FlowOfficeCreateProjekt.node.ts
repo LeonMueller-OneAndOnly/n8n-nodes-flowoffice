@@ -9,6 +9,7 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { buildOptions_boardId, buildOptions_columnsForBoard } from '../../lib/buildBoardOptions';
+import { buildOptions_statusLabels } from '../../lib/buildStatusOptions';
 import { fetchBoards } from '../../lib/fetchBoards';
 
 // Base URL resolution handled in fetchBoards
@@ -32,6 +33,23 @@ export class FlowOfficeCreateProjekt implements INodeType {
 						: (selectedBoardId as number);
 
 				return buildOptions_columnsForBoard(boards, boardIdNum);
+			},
+			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
+				if (selectedBoardId === undefined || selectedBoardId === '') return [];
+				const mapping = this.getCurrentNodeParameter('columnMappings') as
+					| { mappings?: Array<{ columnKey?: string }> }
+					| undefined;
+
+				const columnKey = mapping?.mappings?.[mapping.mappings.length - 1]?.columnKey;
+				if (!columnKey) return [];
+
+				const boards = await fetchBoards(this);
+				const boardIdNum =
+					typeof selectedBoardId === 'string'
+						? parseInt(selectedBoardId, 10)
+						: (selectedBoardId as number);
+				return buildOptions_statusLabels(boards, boardIdNum, columnKey as string);
 			},
 		},
 	};
@@ -108,6 +126,26 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								type: 'string',
 								default: '',
 								description: 'Use expressions to map from input JSON',
+							},
+							{
+								displayName: 'Status Label Name or ID',
+								name: 'statusLabel',
+								type: 'options',
+								default: '',
+								description:
+									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+								typeOptions: {
+									loadOptionsMethod: 'listStatusLabels',
+									loadOptionsDependsOn: ['projekt-board', 'columnMappings'],
+								},
+							},
+							{
+								displayName: 'Status Label Name or ID',
+								name: 'statusLabelIdOrName',
+								type: 'string',
+								default: '',
+								description:
+									'Provide label ID (preferred) or label name; matching tries ID first, then name',
 							},
 						],
 					},
