@@ -1,4 +1,7 @@
 module.exports = {
+	semi: false,
+	printWidth: 100,
+
 	/**
 	 * https://prettier.io/docs/en/options.html#semicolons
 	 */
