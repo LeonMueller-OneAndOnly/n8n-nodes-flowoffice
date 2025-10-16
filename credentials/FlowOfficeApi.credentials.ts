@@ -38,7 +38,7 @@ export class FlowOfficeApi implements ICredentialType {
 			url: '/api/v1/api-key/validate',
 			method: 'GET',
 			headers: {
-				Authorization: 'Bearer {{$credentials.apiKey}}',
+				Authorization: '={{"Bearer " + $credentials.apiKey}}',
 			},
 		},
 		rules: [
