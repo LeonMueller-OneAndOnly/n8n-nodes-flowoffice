@@ -54,7 +54,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
 				if (selectedBoardId === undefined || selectedBoardId === '') return [];
-				const mapping = this.getCurrentNodeParameter('columnMappings') as
+				const mapping = this.getCurrentNodeParameter('statusColumnMappings') as
 					| { mappings?: Array<{ columnKey?: string }> }
 					| undefined;
 
@@ -110,9 +110,9 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				},
 			},
 			{
-				displayName: 'Column Mappings',
+				displayName: 'Column Mappings (Non-Status)',
 				name: 'columnMappings',
-				description: 'Map input fields to board columns',
+				description: 'Map input fields to non-status columns',
 				type: 'fixedCollection',
 				placeholder: 'Add column mapping',
 				default: { mappings: [] },
@@ -144,6 +144,36 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								default: '',
 								description: 'Use expressions to map from input JSON',
 							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Column Mappings (Status Only)',
+				name: 'statusColumnMappings',
+				description: 'Map input fields to status columns',
+				type: 'fixedCollection',
+				placeholder: 'Add status column mapping',
+				default: { mappings: [] },
+				typeOptions: { multipleValues: true },
+				options: [
+					{
+						displayName: 'Mappings',
+						name: 'mappings',
+						values: [
+							{
+								displayName: 'Status Column Name or ID',
+								name: 'columnKey',
+								type: 'options',
+								description:
+									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+								required: true,
+								typeOptions: {
+									loadOptionsMethod: 'listColumnsStatusOnly',
+									loadOptionsDependsOn: ['projekt-board'],
+								},
+								default: '',
+							},
 							{
 								displayName: 'Status Label Name or ID',
 								name: 'statusLabel',
@@ -163,6 +193,13 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								default: '',
 								description:
 									'Provide label ID (preferred) or label name; matching tries ID first, then name',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Use expressions to map from input JSON',
 							},
 						],
 					},
