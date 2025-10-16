@@ -4,7 +4,7 @@ import { ZListBoardsOutput } from './api-schema/board';
 
 export type ListBoardsOutput = z.infer<typeof ZListBoardsOutput>;
 
-export function buildBoardOptions_boardIfField(parsed: ListBoardsOutput): INodePropertyOptions[] {
+export function buildOptions_boardId(parsed: ListBoardsOutput): INodePropertyOptions[] {
 	const options: INodePropertyOptions[] = [];
 
 	for (const topGroup of parsed.boardGroups) {

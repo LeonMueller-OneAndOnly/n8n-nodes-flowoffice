@@ -8,7 +8,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { buildBoardOptions_boardIfField } from '../../lib/buildBoardOptions';
+import { buildOptions_boardId } from '../../lib/buildBoardOptions';
 import { fetchBoards } from '../../lib/fetchBoards';
 
 // Base URL resolution handled in fetchBoards
@@ -18,7 +18,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 		loadOptions: {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const boards = await fetchBoards(this);
-				return buildBoardOptions_boardIfField(boards);
+				return buildOptions_boardId(boards);
 			},
 		},
 	};
