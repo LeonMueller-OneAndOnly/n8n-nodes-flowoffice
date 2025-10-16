@@ -8,53 +8,17 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { apiSchema_v1 } from '../../lib/api-schema';
-import type { z } from 'zod';
-import { ZListBoardsOutput } from '../../lib/api-schema/board';
+import { buildBoardOptions_boardIfField } from '../../lib/buildBoardOptions';
+import { fetchBoards } from '../../lib/fetchBoards';
 
-const FallbackBaseUrl = 'https://api.flow-office.eu';
+// Base URL resolution handled in fetchBoards
 
 export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
 		loadOptions: {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const creds = (await this.getCredentials('flowOfficeApi')) as {
-					apiKey: string;
-					baseUrl?: string;
-				};
-				const baseUrl = (creds.baseUrl || FallbackBaseUrl).replace(/\/$/, '');
-				const response = await this.helpers.httpRequestWithAuthentication.call(
-					this,
-					'flowOfficeApi',
-					{
-						method: 'GET',
-						url: baseUrl + apiSchema_v1.board.listBoards.pathname,
-					},
-				);
-
-				type ListBoardsOutput = z.infer<typeof ZListBoardsOutput>;
-				const parsed = apiSchema_v1.board.listBoards.schema.parse(response) as ListBoardsOutput;
-				const options: INodePropertyOptions[] = [];
-
-				for (const topGroup of parsed.boardGroups) {
-					for (const item of topGroup.boards) {
-						if (item.type === 'board') {
-							options.push({
-								name: `${topGroup.groupName} / ${item.board.name}`,
-								value: item.board.boardId,
-							});
-						} else {
-							for (const board of item.boards) {
-								options.push({
-									name: `${topGroup.groupName} / ${item.groupName} / ${board.name}`,
-									value: board.boardId,
-								});
-							}
-						}
-					}
-				}
-
-				return options;
+				const boards = await fetchBoards(this);
+				return buildBoardOptions_boardIfField(boards);
 			},
 		},
 	};
