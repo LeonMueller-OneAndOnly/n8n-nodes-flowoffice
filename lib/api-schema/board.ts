@@ -1,57 +1,75 @@
-import { z } from "zod"
+import { z } from 'zod';
 
 const ZColumnType = z.enum([
-  //mandatory columns
-  "name",
+	//mandatory columns
+	'name',
 
-  // regular columns
-  "text",
-  "number",
-  "date",
-  "checkbox",
-  "interval",
+	// regular columns
+	'text',
+	'number',
+	'date',
+	'checkbox',
+	'interval',
 
-  "phone",
-  "email",
-  "address",
+	'phone',
+	'email',
+	'address',
 
-  "rating-stars",
-  "erneut-kontaktieren",
-  "link",
-  "personName",
+	'rating-stars',
+	'erneut-kontaktieren',
+	'link',
+	'personName',
 
-  "zeitauswertung",
+	'zeitauswertung',
 
-  "formel",
+	'formel',
 
-  // columns with options
-  "status",
-  "dokument",
+	// columns with options
+	'status',
+	'dokument',
 
-  // project special columns
-  "kunde",
-  "teamMember",
-  "aufgaben",
-  "cloud",
-  "lager",
-])
+	// project special columns
+	'kunde',
+	'teamMember',
+	'aufgaben',
+	'cloud',
+	'lager',
+]);
 
 const ZColumn = z.object({
-  columnKey: z.string(),
-  label: z.string(),
-  columnType: ZColumnType,
+	columnKey: z.string(),
+	label: z.string(),
+	columnType: ZColumnType,
 
-  columnJSON: z.string().optional(), // For additional column options
-  deactivated: z.boolean().optional(), // Instead of deleting columns only deactivate them to prevent users from shotting themself in the leg
-  disableEditing: z.boolean().optional(), // For showing rows, but preventing users from editing them
-})
+	columnJSON: z.string().optional(), // For additional column options
+	deactivated: z.boolean().optional(), // Instead of deleting columns only deactivate them to prevent users from shotting themself in the leg
+	disableEditing: z.boolean().optional(), // For showing rows, but preventing users from editing them
+});
+
+const ZBoard = z.object({
+	boardId: z.number().int(),
+	name: z.string(),
+	columnSchema: ZColumn.array(),
+});
 
 export const ZListBoardsOutput = z.object({
-  boards: z
-    .object({
-      boardId: z.number().int(),
-      name: z.string(),
-      columnSchema: ZColumn.array(),
-    })
-    .array(),
-})
+	boardGroups: z
+		.object({
+			groupName: z.string(),
+			boards: z
+				.discriminatedUnion('type', [
+					z.object({
+						type: z.literal('board'),
+						board: ZBoard,
+					}),
+					z.object({
+						type: z.literal('group'),
+						groupId: z.string(),
+						groupName: z.string(),
+						boards: z.array(ZBoard),
+					}),
+				])
+				.array(),
+		})
+		.array(),
+});
