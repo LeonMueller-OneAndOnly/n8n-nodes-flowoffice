@@ -190,19 +190,12 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								},
 							},
 							{
-								displayName: 'Status Label Name or ID',
+								displayName: 'Specify Status Label Name or ID From Input',
 								name: 'statusLabelIdOrName',
 								type: 'string',
 								default: '',
 								description:
 									'Provide label ID (preferred) or label name; matching tries ID first, then name',
-							},
-							{
-								displayName: 'Value',
-								name: 'value',
-								type: 'string',
-								default: '',
-								description: 'Use expressions to map from input JSON',
 							},
 						],
 					},
