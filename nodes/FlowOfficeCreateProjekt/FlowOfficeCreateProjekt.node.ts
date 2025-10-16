@@ -10,7 +10,6 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 
 import {
 	buildOptions_boardId,
-	buildOptions_columnsForBoard_nonStatus,
 	buildOptions_columnsForBoard_statusOnly,
 	buildOptions_columnsForBoard,
 } from '../../lib/buildBoardOptions';
@@ -24,19 +23,20 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				const boards = await fetchBoards(this);
 				return buildOptions_boardId(boards);
 			},
-			async listColumnsNonStatus(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
-				if (selectedBoardId === undefined || selectedBoardId === '') return [];
+			// async listColumnsAll(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			// 	const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
+			// 	if (selectedBoardId === undefined || selectedBoardId === '') return [];
 
-				const boards = await fetchBoards(this);
+			// 	const boards = await fetchBoards(this);
 
-				const boardIdNum =
-					typeof selectedBoardId === 'string'
-						? parseInt(selectedBoardId, 10)
-						: (selectedBoardId as number);
+			// 	const boardIdNum =
+			// 		typeof selectedBoardId === 'string'
+			// 			? parseInt(selectedBoardId, 10)
+			// 			: (selectedBoardId as number);
 
-				return buildOptions_columnsForBoard_nonStatus(boards, boardIdNum);
-			},
+			// 	// Return all columns (including status) to simplify UX
+			// 	return buildOptions_columnsForBoard(boards, boardIdNum);
+			// },
 			async listColumnsStatusOnly(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
 				if (selectedBoardId === undefined || selectedBoardId === '') return [];
@@ -67,26 +67,16 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
 				if (selectedBoardId === undefined || selectedBoardId === '') return [];
 
-				// Try to get the sibling columnKey from the current mapping row first
-				let columnKey = this.getCurrentNodeParameter('columnKey') as string | undefined;
-
-				// Fallback to last mapping's columnKey if sibling lookup is not available
-				if (!columnKey) {
-					const mapping = this.getCurrentNodeParameter('columnMappings') as
-						| { mappings?: Array<{ columnKey?: string }> }
-						| undefined;
-					columnKey = mapping?.mappings?.[mapping.mappings.length - 1]?.columnKey as
-						| string
-						| undefined;
-				}
-
-				if (!columnKey) return [];
+				// Prefer the sibling columnKey in the current row
+				const columnKey = this.getCurrentNodeParameter('columnKey') as string | undefined;
 
 				const boards = await fetchBoards(this);
 				const boardIdNum =
 					typeof selectedBoardId === 'string'
 						? parseInt(selectedBoardId, 10)
 						: (selectedBoardId as number);
+
+				if (!columnKey) return [];
 				return buildOptions_statusLabels(boards, boardIdNum, columnKey);
 			},
 		},
@@ -146,13 +136,6 @@ export class FlowOfficeCreateProjekt implements INodeType {
 						name: 'mappings',
 						values: [
 							{
-								displayName: 'Is Status Column',
-								name: 'isStatus',
-								type: 'boolean',
-								default: false,
-								hint: 'Toggle on only for status-type columns',
-							},
-							{
 								displayName: 'Column Name or ID',
 								name: 'columnKey',
 								type: 'options',
@@ -164,6 +147,13 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								description:
 									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 								default: '',
+							},
+							{
+								displayName: 'Is Status Column',
+								name: 'isStatus',
+								type: 'boolean',
+								default: false,
+								hint: 'Toggle on only for status-type columns',
 							},
 							{
 								displayName: 'Value',
