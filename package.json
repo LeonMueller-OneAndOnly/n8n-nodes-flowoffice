@@ -31,7 +31,9 @@
 	"n8n": {
 		"n8nNodesApiVersion": 1,
 		"strict": true,
-		"credentials": [],
+		"credentials": [
+			"dist/credentials/FlowOfficeApi.credentials.js"
+		],
 		"nodes": [
 			"dist/nodes/FlowOfficeCreateProjekt/FlowOfficeCreateProjekt.node.js"
 		]
@@ -45,5 +47,8 @@
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"
+	},
+	"dependencies": {
+		"zod": "^4.1.12"
 	}
 }

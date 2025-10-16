@@ -1,12 +1,41 @@
 import type {
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
+const FallbackBaseUrl = 'https://api.flow-office.eu';
+
 export class FlowOfficeCreateProjekt implements INodeType {
+	methods = {
+		loadOptions: {
+			async getBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const creds = (await this.getCredentials('flowOfficeApi')) as {
+					apiKey: string;
+					baseUrl?: string;
+				};
+				const baseUrl = (creds.baseUrl || FallbackBaseUrl).replace(/\/$/, '');
+				const response = await this.helpers.httpRequestWithAuthentication.call(
+					this,
+					'flowOfficeApi',
+					{
+						method: 'GET',
+						url: `${baseUrl}/api/v1/boards/list-boards`,
+					},
+				);
+
+				const boards: Array<{ id: string; name: string }> = Array.isArray(response)
+					? response
+					: (response?.boards ?? []);
+
+				return boards.map((b) => ({ name: b.name, value: b.id }));
+			},
+		},
+	};
 	description: INodeTypeDescription = {
 		displayName: 'FlowOffice: Create Projekt',
 		name: 'flowOfficeCreateProjekt',
@@ -23,17 +52,28 @@ export class FlowOfficeCreateProjekt implements INodeType {
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		usableAsTool: true,
+		credentials: [
+			{
+				name: 'flowOfficeApi',
+				required: true,
+			},
+		],
 		properties: [
 			// Node properties which the user gets displayed and
 			// can change on the node.
 			{
-				displayName: 'Board',
+				displayName: 'Board Name or ID',
+				placeholder: 'Select a board',
 				name: 'projekt-board',
-				type: 'options',
-				options: [{ displayName: 'Leads', value: 'board-id:123', name: 'board-ID:123' }],
-				default: 'board-id:123',
-				// placeholder: 'Placeholder value',
 				// description: 'The description text',
+				type: 'options',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				default: '',
+				required: true,
+				typeOptions: {
+					loadOptionsMethod: 'getBoards',
+				},
 			},
 		],
 	};
