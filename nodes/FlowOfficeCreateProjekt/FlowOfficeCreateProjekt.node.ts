@@ -23,11 +23,14 @@ export class FlowOfficeCreateProjekt implements INodeType {
 			async listColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
 				if (selectedBoardId === undefined || selectedBoardId === '') return [];
+
 				const boards = await fetchBoards(this);
+
 				const boardIdNum =
 					typeof selectedBoardId === 'string'
 						? parseInt(selectedBoardId, 10)
 						: (selectedBoardId as number);
+
 				return buildOptions_columnsForBoard(boards, boardIdNum);
 			},
 		},
@@ -78,13 +81,13 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				type: 'fixedCollection',
 				placeholder: 'Add column mapping',
 				default: { mappings: [] },
+				typeOptions: {
+					multipleValues: true,
+				},
 				options: [
 					{
 						displayName: 'Mappings',
 						name: 'mappings',
-						typeOptions: {
-							multipleValues: true,
-						},
 						values: [
 							{
 								displayName: 'Column Name or ID',
