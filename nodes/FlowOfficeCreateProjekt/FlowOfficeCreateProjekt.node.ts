@@ -6,7 +6,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { buildOptions_boardId, buildOptions_columnsForBoard } from '../../lib/buildBoardOptions';
 import { fetchBoards } from '../../lib/fetchBoards';
@@ -33,7 +33,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 		},
 	};
 	description: INodeTypeDescription = {
-		displayName: 'FlowOffice: Create Projekt',
+		displayName: 'Create Projekt (FlowOffice)',
 		name: 'flowOfficeCreateProjekt',
 		icon: {
 			light: 'file:FlowOfficeCreateProjekt.svg',
@@ -41,9 +41,9 @@ export class FlowOfficeCreateProjekt implements INodeType {
 		},
 		group: ['input'],
 		version: 1,
-		description: 'Create a projekt in FlowOffice',
+		description: 'Create a project in FlowOffice',
 		defaults: {
-			name: 'FlowOffice: Create Projekt',
+			name: 'Create Project (FlowOffice)',
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
@@ -77,7 +77,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				description: 'Map input fields to board columns',
 				type: 'fixedCollection',
 				placeholder: 'Add column mapping',
-				default: {},
+				default: { mappings: [] },
 				options: [
 					{
 						displayName: 'Mappings',
@@ -120,38 +120,40 @@ export class FlowOfficeCreateProjekt implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 
-		let item: INodeExecutionData;
-		let myString: string;
-
-		// Iterates over all input items and add the key "myString" with the
-		// value the parameter "myString" resolves to.
-		// (This could be a different value for each item in case it contains an expression)
-		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-			try {
-				myString = this.getNodeParameter('myString', itemIndex, '') as string;
-				item = items[itemIndex];
-
-				item.json.myString = myString;
-			} catch (error) {
-				// This node should never fail but we want to showcase how
-				// to handle errors.
-				if (this.continueOnFail()) {
-					items.push({ json: this.getInputData(itemIndex)[0].json, error, pairedItem: itemIndex });
-				} else {
-					// Adding `itemIndex` allows other workflows to handle this error
-					if (error.context) {
-						// If the error thrown already contains the context property,
-						// only append the itemIndex
-						error.context.itemIndex = itemIndex;
-						throw error;
-					}
-					throw new NodeOperationError(this.getNode(), error, {
-						itemIndex,
-					});
-				}
-			}
-		}
-
 		return [items];
+
+		// let item: INodeExecutionData;
+		// let myString: string;
+
+		// // Iterates over all input items and add the key "myString" with the
+		// // value the parameter "myString" resolves to.
+		// // (This could be a different value for each item in case it contains an expression)
+		// for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+		// 	try {
+		// 		myString = this.getNodeParameter('myString', itemIndex, '') as string;
+		// 		item = items[itemIndex];
+
+		// 		item.json.myString = myString;
+		// 	} catch (error) {
+		// 		// This node should never fail but we want to showcase how
+		// 		// to handle errors.
+		// 		if (this.continueOnFail()) {
+		// 			items.push({ json: this.getInputData(itemIndex)[0].json, error, pairedItem: itemIndex });
+		// 		} else {
+		// 			// Adding `itemIndex` allows other workflows to handle this error
+		// 			if (error.context) {
+		// 				// If the error thrown already contains the context property,
+		// 				// only append the itemIndex
+		// 				error.context.itemIndex = itemIndex;
+		// 				throw error;
+		// 			}
+		// 			throw new NodeOperationError(this.getNode(), error, {
+		// 				itemIndex,
+		// 			});
+		// 		}
+		// 	}
+		// }
+
+		// return [items];
 	}
 }
