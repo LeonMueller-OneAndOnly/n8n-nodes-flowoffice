@@ -27,3 +27,30 @@ export function buildOptions_boardId(parsed: ListBoardsOutput): INodePropertyOpt
 
 	return options;
 }
+
+export function getBoardById(parsed: ListBoardsOutput, boardId: number) {
+	for (const topGroup of parsed.boardGroups) {
+		for (const item of topGroup.boards) {
+			if (item.type === 'board') {
+				if (item.board.boardId === boardId) return item.board;
+			} else {
+				const found = item.boards.find((b) => b.boardId === boardId);
+				if (found) return found;
+			}
+		}
+	}
+	return undefined;
+}
+
+export function buildOptions_columnsForBoard(
+	parsed: ListBoardsOutput,
+	boardId: number,
+): INodePropertyOptions[] {
+	const board = getBoardById(parsed, boardId);
+	if (!board) return [];
+	return board.columnSchema.map((col) => ({
+		name: `${col.label} (${col.columnType})`,
+		value: col.columnKey,
+		description: `Column type: ${col.columnType}`,
+	}));
+}

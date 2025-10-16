@@ -8,7 +8,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { buildOptions_boardId } from '../../lib/buildBoardOptions';
+import { buildOptions_boardId, buildOptions_columnsForBoard } from '../../lib/buildBoardOptions';
 import { fetchBoards } from '../../lib/fetchBoards';
 
 // Base URL resolution handled in fetchBoards
@@ -19,6 +19,16 @@ export class FlowOfficeCreateProjekt implements INodeType {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const boards = await fetchBoards(this);
 				return buildOptions_boardId(boards);
+			},
+			async listColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
+				if (selectedBoardId === undefined || selectedBoardId === '') return [];
+				const boards = await fetchBoards(this);
+				const boardIdNum =
+					typeof selectedBoardId === 'string'
+						? parseInt(selectedBoardId, 10)
+						: (selectedBoardId as number);
+				return buildOptions_columnsForBoard(boards, boardIdNum);
 			},
 		},
 	};
@@ -54,12 +64,51 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				// description: 'The description text',
 				type: 'options',
 				description:
-					'Choose from the list, or specify a Board-ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				default: '',
 				required: true,
 				typeOptions: {
 					loadOptionsMethod: 'listBoards',
 				},
+			},
+			{
+				displayName: 'Column Mappings',
+				name: 'columnMappings',
+				description: 'Map input fields to board columns',
+				type: 'fixedCollection',
+				placeholder: 'Add column mapping',
+				default: {},
+				options: [
+					{
+						displayName: 'Mappings',
+						name: 'mappings',
+						typeOptions: {
+							multipleValues: true,
+						},
+						values: [
+							{
+								displayName: 'Column Name or ID',
+								name: 'columnKey',
+								type: 'options',
+								required: true,
+								typeOptions: {
+									loadOptionsMethod: 'listColumns',
+									loadOptionsDependsOn: ['projekt-board'],
+								},
+								description:
+									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+								default: '',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Use expressions to map from input JSON',
+							},
+						],
+					},
+				],
 			},
 		],
 	};
