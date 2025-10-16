@@ -1,7 +1,7 @@
 import type { INodePropertyOptions } from 'n8n-workflow';
 import type { ListBoardsOutput } from './buildBoardOptions';
 import { getBoardById } from './buildBoardOptions';
-import { helper } from './api-schema-bundled/helper';
+import { helper } from './api-schema-bundled/helper.js';
 
 export function buildOptions_statusLabels(
 	parsed: ListBoardsOutput,

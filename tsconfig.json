@@ -11,6 +11,8 @@
 		"noImplicitReturns": true,
 		"noUnusedLocals": true,
 
+		"allowJs": true,
+
 		"preserveConstEnums": true,
 
 		"resolveJsonModule": true,
