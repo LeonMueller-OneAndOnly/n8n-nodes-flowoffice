@@ -8,12 +8,13 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
+import { apiSchema_v1 } from '../../lib/api-schema';
 const FallbackBaseUrl = 'https://api.flow-office.eu';
 
 export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
 		loadOptions: {
-			async getBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const creds = (await this.getCredentials('flowOfficeApi')) as {
 					apiKey: string;
 					baseUrl?: string;
@@ -24,15 +25,13 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					'flowOfficeApi',
 					{
 						method: 'GET',
-						url: `${baseUrl}/api/v1/boards/list-boards`,
+						url: baseUrl + apiSchema_v1.board.listBoards.pathname,
 					},
 				);
 
-				const boards: Array<{ id: string; name: string }> = Array.isArray(response)
-					? response
-					: (response?.boards ?? []);
+				const { boards } = apiSchema_v1.board.listBoards.schema.parse(response);
 
-				return boards.map((b) => ({ name: b.name, value: b.id }));
+				return boards.map((aBoard) => ({ name: aBoard.name, value: aBoard.boardId }));
 			},
 		},
 	};
@@ -68,11 +67,11 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				// description: 'The description text',
 				type: 'options',
 				description:
-					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+					'Choose from the list, or specify a Board-ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				default: '',
 				required: true,
 				typeOptions: {
-					loadOptionsMethod: 'getBoards',
+					loadOptionsMethod: 'listBoards',
 				},
 			},
 		],

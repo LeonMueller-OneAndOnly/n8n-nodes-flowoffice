@@ -10,25 +10,6 @@ export class FlowOfficeApi implements ICredentialType {
 	displayName = 'FlowOffice API';
 	icon = { light: 'file:FlowOfficeApi.svg', dark: 'file:FlowOfficeApi.dark.svg' } as const;
 	documentationUrl = 'https://app.flow-office.eu/n8n-docs';
-	test: ICredentialTestRequest = {
-		request: {
-			baseURL: '={{$credentials.baseUrl}}',
-			url: '/api/v1/api-key/validate',
-			method: 'GET',
-			headers: {
-				Authorization: 'Bearer {{$credentials.apiKey}}',
-			},
-		},
-		rules: [
-			{
-				type: 'responseCode',
-				properties: {
-					value: 200,
-					message: 'API key is valid',
-				},
-			},
-		],
-	};
 
 	properties: INodeProperties[] = [
 		{
@@ -49,6 +30,26 @@ export class FlowOfficeApi implements ICredentialType {
 			description: 'API key for authenticating with FlowOffice',
 		},
 	];
+
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: '={{$credentials.baseUrl}}',
+			url: '/api/v1/api-key/validate',
+			method: 'GET',
+			headers: {
+				Authorization: 'Bearer {{$credentials.apiKey}}',
+			},
+		},
+		rules: [
+			{
+				type: 'responseCode',
+				properties: {
+					value: 200,
+					message: 'API key is valid',
+				},
+			},
+		],
+	};
 
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
