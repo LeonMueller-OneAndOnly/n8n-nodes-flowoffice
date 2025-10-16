@@ -165,7 +165,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 						name: 'mappings',
 						values: [
 							{
-								displayName: 'Status Column Name or ID',
+								displayName: 'Column Name or ID',
 								name: 'columnKey',
 								type: 'options',
 								description:
@@ -178,7 +178,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								default: '',
 							},
 							{
-								displayName: 'Status Label Name or ID',
+								displayName: 'Label Name or ID',
 								name: 'statusLabel',
 								type: 'options',
 								default: '',
@@ -188,14 +188,6 @@ export class FlowOfficeCreateProjekt implements INodeType {
 									loadOptionsMethod: 'listStatusLabels',
 									loadOptionsDependsOn: ['projekt-board', 'statusColumnMappings'],
 								},
-							},
-							{
-								displayName: 'Specify Status Label Name or ID From Input',
-								name: 'statusLabelIdOrName',
-								type: 'string',
-								default: '',
-								description:
-									'Provide label ID (preferred) or label name; matching tries ID first, then name',
 							},
 						],
 					},
