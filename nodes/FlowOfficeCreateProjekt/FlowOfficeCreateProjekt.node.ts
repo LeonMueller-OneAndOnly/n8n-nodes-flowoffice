@@ -12,6 +12,7 @@ import {
 	buildOptions_boardId,
 	buildOptions_columnsForBoard_nonStatus,
 	buildOptions_columnsForBoard_statusOnly,
+	buildOptions_columnsForBoard,
 } from '../../lib/buildBoardOptions';
 import { buildOptions_statusLabels } from '../../lib/buildStatusOptions';
 import { fetchBoards } from '../../lib/fetchBoards';
@@ -49,6 +50,19 @@ export class FlowOfficeCreateProjekt implements INodeType {
 
 				return buildOptions_columnsForBoard_statusOnly(boards, boardIdNum);
 			},
+			async listColumnsAll(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
+				if (selectedBoardId === undefined || selectedBoardId === '') return [];
+
+				const boards = await fetchBoards(this);
+
+				const boardIdNum =
+					typeof selectedBoardId === 'string'
+						? parseInt(selectedBoardId, 10)
+						: (selectedBoardId as number);
+
+				return buildOptions_columnsForBoard(boards, boardIdNum);
+			},
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
 				if (selectedBoardId === undefined || selectedBoardId === '') return [];
@@ -58,7 +72,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 
 				// Fallback to last mapping's columnKey if sibling lookup is not available
 				if (!columnKey) {
-					const mapping = this.getCurrentNodeParameter('statusColumnMappings') as
+					const mapping = this.getCurrentNodeParameter('columnMappings') as
 						| { mappings?: Array<{ columnKey?: string }> }
 						| undefined;
 					columnKey = mapping?.mappings?.[mapping.mappings.length - 1]?.columnKey as
@@ -117,10 +131,9 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				},
 			},
 			{
-				displayName: 'Column Mappings (Non-Status-Columns)',
+				displayName: 'Column Mappings',
 				name: 'columnMappings',
-				description: 'Map input fields to non-status columns',
-				hint: 'Note: Status columns are mapped separately below',
+				description: 'Map input fields to columns. For status columns, select a status label.',
 				type: 'fixedCollection',
 				placeholder: 'Add column mapping',
 				default: { mappings: [] },
@@ -133,12 +146,19 @@ export class FlowOfficeCreateProjekt implements INodeType {
 						name: 'mappings',
 						values: [
 							{
+								displayName: 'Is Status Column',
+								name: 'isStatus',
+								type: 'boolean',
+								default: false,
+								hint: 'Toggle on only for status-type columns',
+							},
+							{
 								displayName: 'Column Name or ID',
 								name: 'columnKey',
 								type: 'options',
 								required: true,
 								typeOptions: {
-									loadOptionsMethod: 'listColumnsNonStatus',
+									loadOptionsMethod: 'listColumnsAll',
 									loadOptionsDependsOn: ['projekt-board'],
 								},
 								description:
@@ -150,39 +170,12 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								name: 'value',
 								type: 'string',
 								default: '',
-								description: 'Use expressions to map from input JSON',
-							},
-						],
-					},
-				],
-			},
-
-			{
-				displayName: 'Column Mappings (Status-Columns Only)',
-				name: 'statusColumnMappings',
-				description: 'Map input fields to status-columns only',
-				hint: 'Note: Only status columns are available here; non-status columns are above',
-				type: 'fixedCollection',
-				placeholder: 'Add status column mapping',
-				default: { mappings: [] },
-				typeOptions: { multipleValues: true },
-				options: [
-					{
-						displayName: 'Mappings',
-						name: 'mappings',
-						values: [
-							{
-								displayName: 'Column Name or ID',
-								name: 'columnKey',
-								type: 'options',
-								description:
-									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-								required: true,
-								typeOptions: {
-									loadOptionsMethod: 'listColumnsStatusOnly',
-									loadOptionsDependsOn: ['projekt-board'],
+								description: 'Use expressions to map from input JSON (non-status columns)',
+								displayOptions: {
+									show: {
+										isStatus: [false],
+									},
 								},
-								default: '',
 							},
 							{
 								displayName: 'Label Name or ID',
@@ -195,9 +188,15 @@ export class FlowOfficeCreateProjekt implements INodeType {
 									loadOptionsMethod: 'listStatusLabels',
 									loadOptionsDependsOn: [
 										'projekt-board',
-										// Refresh when the selected status column changes
-										'statusColumnMappings.mappings.columnKey',
+										// Refresh when the selected column changes
+										'columnMappings.mappings.columnKey',
+										'columnMappings.mappings.isStatus',
 									],
+								},
+								displayOptions: {
+									show: {
+										isStatus: [true],
+									},
 								},
 							},
 						],
@@ -224,6 +223,11 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				_nodeSettings: nodeParameters,
 			};
 		}
+
+		/**
+		 * ToDo: parse the projekt so each input item maps to a new object where the column key shows to its input value?
+		 * //
+		 */
 
 		return [items];
 
