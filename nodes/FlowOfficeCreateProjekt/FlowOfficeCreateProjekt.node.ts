@@ -14,13 +14,17 @@ import {
 	buildOptions_columnsForBoard,
 } from "../../src/build-options/buildBoardOptions"
 import { buildOptions_statusLabels } from "../../src/build-options/buildStatusOptions"
-import { fetchBoards } from "../../src/transport/list-boards"
+import { invokeEndpoint } from "../../src/transport/invoke-api"
+import { apiSchema_v1 } from "../../src/transport/api-schema-bundled/api"
 
 export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
 		loadOptions: {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const boards = await fetchBoards(this)
+				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
 				return buildOptions_boardId(boards)
 			},
 			// async listColumnsAll(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -41,7 +45,10 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				const selectedBoardId = this.getCurrentNodeParameter("projekt-board")
 				if (selectedBoardId === undefined || selectedBoardId === "") return []
 
-				const boards = await fetchBoards(this)
+				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
 
 				const boardIdNum =
 					typeof selectedBoardId === "string"
@@ -54,7 +61,10 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				const selectedBoardId = this.getCurrentNodeParameter("projekt-board")
 				if (selectedBoardId === undefined || selectedBoardId === "") return []
 
-				const boards = await fetchBoards(this)
+				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
 
 				const boardIdNum =
 					typeof selectedBoardId === "string"
@@ -70,7 +80,10 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				// Prefer the sibling columnKey in the current row
 				const columnKey = this.getCurrentNodeParameter("columnKey") as string | undefined
 
-				const boards = await fetchBoards(this)
+				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
 				const boardIdNum =
 					typeof selectedBoardId === "string"
 						? parseInt(selectedBoardId, 10)
@@ -84,7 +97,10 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				const columnKey = this.getCurrentNodeParameter("columnKey") as string | undefined
 				if (selectedBoardId === undefined || selectedBoardId === "" || !columnKey) return []
 
-				const boards = await fetchBoards(this)
+				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
 				const boardIdNum =
 					typeof selectedBoardId === "string"
 						? parseInt(selectedBoardId, 10)

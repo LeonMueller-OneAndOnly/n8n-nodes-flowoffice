@@ -1,11 +1,11 @@
 import { getCredentials_fromOptionsLoader } from "../get-credentials"
 
-import { ILoadOptionsFunctions } from "n8n-workflow"
+import { IHttpRequestMethods, ILoadOptionsFunctions } from "n8n-workflow"
 import z from "zod"
 
 export async function invokeEndpoint<S_input extends z.Schema, S_output extends z.Schema>(
 	apiSchema: {
-		method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD"
+		method: (string & {}) | "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD"
 		inputSchema: S_input
 		outputSchema: S_output
 		pathname: string
@@ -21,7 +21,7 @@ export async function invokeEndpoint<S_input extends z.Schema, S_output extends 
 		input.thisArg,
 		"flowOfficeApi",
 		{
-			method: apiSchema.method,
+			method: apiSchema.method as IHttpRequestMethods,
 			url: baseUrl + apiSchema.pathname,
 			body: JSON.stringify(input.body),
 		},
