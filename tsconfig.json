@@ -37,5 +37,5 @@
 		"noImplicitOverride": false,
 		"exactOptionalPropertyTypes": false
 	},
-	"include": ["credentials/**/*", "nodes/**/*", "nodes/**/*.json", "package.json"]
+	"include": ["credentials/**/*", "nodes/**/*", "nodes/**/*.json", "src/**/*", "package.json"]
 }

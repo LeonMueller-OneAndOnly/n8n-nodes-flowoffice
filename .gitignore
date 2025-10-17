@@ -1,4 +1,7 @@
 node_modules
+.DS_Store
+
 dist
-lib/api-schema-bundled/helper.js.map
-lib/api-schema-bundled/api.ts.map
+
+src/api-schema-bundled/helper.js.map
+src/api-schema-bundled/api.ts.map

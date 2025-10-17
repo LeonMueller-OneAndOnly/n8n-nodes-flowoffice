@@ -12,9 +12,9 @@ import {
 	buildOptions_boardId,
 	buildOptions_columnsForBoard_statusOnly,
 	buildOptions_columnsForBoard,
-} from '../../lib/buildBoardOptions';
-import { buildOptions_statusLabels } from '../../lib/buildStatusOptions';
-import { fetchBoards } from '../../lib/fetchBoards';
+} from '../../src/buildBoardOptions';
+import { buildOptions_statusLabels } from '../../src/buildStatusOptions';
+import { fetchBoards } from '../../src/fetchBoards';
 
 export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
