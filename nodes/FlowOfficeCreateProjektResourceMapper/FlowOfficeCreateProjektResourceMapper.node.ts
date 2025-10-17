@@ -260,6 +260,13 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 		 * ToDo: parse the projekt so each input item maps to a new object where the column key shows to its input value?
 		 */
 
+		const mappedItems = new Array<{
+			originalItem: INodeExecutionData
+			/** column id / key to cell value */
+			mappedItem: Record<string, unknown>
+			boardId: number
+		}>()
+
 		return [items]
 
 		// let item: INodeExecutionData;
