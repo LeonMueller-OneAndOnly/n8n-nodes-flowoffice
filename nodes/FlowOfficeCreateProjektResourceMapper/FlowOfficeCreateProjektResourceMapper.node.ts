@@ -236,17 +236,18 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 		const outputItems: INodeExecutionData[] = []
 		for (let itemIndex = 0; itemIndex < inputItems.length; itemIndex++) {
-			const resourceMapper = this.getNodeParameter("resourceMapper", itemIndex, {}) as
-				| { value?: Record<string, unknown> | null }
-				| undefined
+			const resourceMapper = this.getNodeParameter("resourceMapper", itemIndex, {})
 
-			const mapped: IDataObject =
-				resourceMapper &&
-				typeof resourceMapper === "object" &&
-				resourceMapper.value &&
-				typeof resourceMapper.value === "object"
-					? (resourceMapper.value as unknown as IDataObject)
-					: ({} as IDataObject)
+			if (
+				!resourceMapper ||
+				typeof resourceMapper !== "object" ||
+				!("value" in resourceMapper) ||
+				typeof resourceMapper.value !== "object"
+			) {
+				continue
+			}
+
+			const mapped = resourceMapper.value
 
 			outputItems.push({
 				json: { mapped, boardId },
