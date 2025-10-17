@@ -14,6 +14,8 @@ import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
 import {
 	buildOptions_boardId,
 	buildOptions_columnsForBoard,
+	buildOptions_columnsForBoard_nonStatus,
+	buildOptions_columnsForBoard_statusOnly,
 	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
 import { buildOptions_statusLabels } from "../../src/build-options/buildStatusOptions"
@@ -42,9 +44,38 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				return buildOptions_columnsForBoard({ boards, boardId })
 			},
 
+			async listColumnsStatusOnly(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter("boardId")
+				if (!selectedBoardId) return []
+
+				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
+
+				const boardId = Number(selectedBoardId)
+				return buildOptions_columnsForBoard_statusOnly(boards, boardId)
+			},
+
+			async listColumnsNonStatus(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter("boardId")
+				if (!selectedBoardId) return []
+
+				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
+
+				const boardId = Number(selectedBoardId)
+				return buildOptions_columnsForBoard_nonStatus(boards, boardId)
+			},
+
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				const columnKey = this.getCurrentNodeParameter("columnKey")
+				const columnKey =
+					(this.getCurrentNodeParameter("statusColumnKey") as string | undefined) ??
+					(this.getCurrentNodeParameter("columnKey") as string | undefined)
+
 				if (!selectedBoardId || typeof columnKey !== "string") return []
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
@@ -65,7 +96,9 @@ export class FlowOfficeCreateProjekt implements INodeType {
 
 			async getSelectedColumnType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				const columnKey = this.getCurrentNodeParameter("columnKey")
+				const columnKey =
+					(this.getCurrentNodeParameter("statusColumnKey") as string | undefined) ??
+					(this.getCurrentNodeParameter("columnKey") as string | undefined)
 
 				if (!selectedBoardId || !columnKey) return []
 
@@ -122,19 +155,20 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				// description: 'The description text',
 				type: "options",
 				description:
-					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>. <br/>Each board has different columns. Provide a mapping for which input field should go to which column in your selected board.',
 				default: "",
 				required: true,
 				typeOptions: {
 					loadOptionsMethod: "listBoards",
 				},
 			},
+
 			{
-				displayName: "Column Mappings",
-				name: "columnMappings",
-				description: "Map your input fields to the columns in the board.",
+				displayName: "Regular Column Mappings",
+				name: "valueMappings",
+				description: "Set values for non-status columns",
 				type: "fixedCollection",
-				placeholder: "Add column mapping",
+				placeholder: "Add regular column mapping",
 				default: { mappings: [] },
 				typeOptions: {
 					multipleValues: true,
@@ -142,7 +176,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				},
 				options: [
 					{
-						displayName: "Mappings",
+						displayName: "Mapping",
 						name: "mappings",
 						values: [
 							{
@@ -151,36 +185,50 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								type: "options",
 								required: true,
 								typeOptions: {
-									loadOptionsMethod: "listColumnsAll",
+									loadOptionsMethod: "listColumnsNonStatus",
 									loadOptionsDependsOn: ["boardId"],
 								},
-								description:
-									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+								description: "Choose a non-status column",
 								default: "",
-							},
-							{
-								displayName: "Column Type",
-								name: "columnType",
-								type: "options",
-								default: "",
-								required: true,
-								options: [
-									{ name: "Status", value: "status" },
-									{ name: "Other", value: "other" },
-								],
-								description: "Choose to show either Status selector or Value input",
 							},
 							{
 								displayName: "Value",
 								name: "value",
 								type: "string",
 								default: "",
-								description: "Use expressions to map from input JSON (non-status columns)",
-								displayOptions: {
-									hide: {
-										columnType: ["status"],
-									},
+								description: "Use expressions to map from input JSON",
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: "Status-Column Mappings",
+				name: "statusMappings",
+				description: "Set labels for status-type columns",
+				type: "fixedCollection",
+				placeholder: "Add status column mapping",
+				default: { mappings: [] },
+				typeOptions: {
+					multipleValues: true,
+					loadOptionsDependsOn: ["boardId"],
+				},
+				options: [
+					{
+						displayName: "Mapping",
+						name: "mappings",
+						values: [
+							{
+								displayName: "Status Column",
+								name: "statusColumnKey",
+								type: "options",
+								required: true,
+								typeOptions: {
+									loadOptionsMethod: "listColumnsStatusOnly",
+									loadOptionsDependsOn: ["boardId"],
 								},
+								description: "Choose a status column",
+								default: "",
 							},
 							{
 								displayName: "Label Name or ID",
@@ -191,20 +239,8 @@ export class FlowOfficeCreateProjekt implements INodeType {
 									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 								typeOptions: {
 									loadOptionsMethod: "listStatusLabels",
-									loadOptionsDependsOn: ["boardId", "columnKey"],
+									loadOptionsDependsOn: ["boardId", "statusColumnKey"],
 								},
-								displayOptions: {
-									show: {
-										columnType: ["status"],
-									},
-								},
-							},
-							{
-								displayName: "Refresh options",
-								name: "refreshOptions",
-								type: "boolean",
-								default: false,
-								description: "Toggle to refresh dependent options in this mapping",
 							},
 						],
 					},
