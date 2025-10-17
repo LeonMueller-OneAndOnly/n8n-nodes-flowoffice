@@ -227,7 +227,11 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 	// The function below is responsible for actually doing whatever this node is supposed to do.
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const boardId = this.getNodeParameter("boardId", 0, "") as string
+		const boardId = z.coerce
+			.number()
+			.int()
+			.parse(this.getNodeParameter("boardId", 0, "not-defined"))
+
 		const inputItems = this.getInputData()
 
 		const outputItems: INodeExecutionData[] = []
