@@ -1,21 +1,21 @@
-import { apiSchema_v1 } from './api-schema-bundled/api';
+import { apiSchema_v1 } from "./transport/api-schema-bundled/api"
 
-import { getCredentials_fromOptionsLoader } from './get-credentials';
+import { getCredentials_fromOptionsLoader } from "./get-credentials"
 
-import type { ILoadOptionsFunctions } from 'n8n-workflow';
-import type { ListBoardsOutput } from './buildBoardOptions';
+import type { ILoadOptionsFunctions } from "n8n-workflow"
+import type { ListBoardsOutput } from "./buildBoardOptions"
 
 export async function fetchBoards(thisArg: ILoadOptionsFunctions): Promise<ListBoardsOutput> {
-	const { baseUrl } = await getCredentials_fromOptionsLoader(thisArg);
+	const { baseUrl } = await getCredentials_fromOptionsLoader(thisArg)
 
 	const response = await thisArg.helpers.httpRequestWithAuthentication.call(
 		thisArg,
-		'flowOfficeApi',
+		"flowOfficeApi",
 		{
-			method: 'GET',
+			method: "GET",
 			url: baseUrl + apiSchema_v1.board.listBoards.pathname,
 		},
-	);
+	)
 
-	return apiSchema_v1.board.listBoards.schema.parse(response);
+	return apiSchema_v1.board.listBoards.schema.parse(response)
 }
