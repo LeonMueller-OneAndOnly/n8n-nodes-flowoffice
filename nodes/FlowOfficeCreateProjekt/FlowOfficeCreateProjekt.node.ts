@@ -19,6 +19,7 @@ import {
 	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
 import { buildOptions_statusLabels } from "../../src/build-options/buildStatusOptions"
+import { locales } from "zod"
 
 export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
@@ -161,6 +162,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				typeOptions: {
 					loadOptionsMethod: "listBoards",
 				},
+				hint: "Each board can have different columns. First select the board and then provide the mapping, which input field should go to which column in your selected board.",
 			},
 
 			{
@@ -213,6 +215,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					multipleValues: true,
 					loadOptionsDependsOn: ["boardId"],
 				},
+				hint: "Each status-column can have different labels. First select the status-column and then specify which label shall be used for the new projekt.",
 				options: [
 					{
 						displayName: "Mapping",
