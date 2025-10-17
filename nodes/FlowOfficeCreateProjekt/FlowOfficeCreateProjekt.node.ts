@@ -207,7 +207,9 @@ export class FlowOfficeCreateProjekt implements INodeType {
 			{
 				displayName: "Status-Column Mappings",
 				name: "statusMappings",
-				description: "Set labels for status-type columns",
+				description:
+					"Each status-column can have different labels. First select the status-column and then specify which label shall be used for the new projekt.",
+				hint: "Each status-column can have different labels. First select the status-column and then specify which label shall be used for the new projekt.",
 				type: "fixedCollection",
 				placeholder: "Add status column mapping",
 				default: { mappings: [] },
@@ -215,7 +217,6 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					multipleValues: true,
 					loadOptionsDependsOn: ["boardId"],
 				},
-				hint: "Each status-column can have different labels. First select the status-column and then specify which label shall be used for the new projekt.",
 				options: [
 					{
 						displayName: "Mapping",
