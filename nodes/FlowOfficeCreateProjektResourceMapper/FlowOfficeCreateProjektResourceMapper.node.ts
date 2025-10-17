@@ -38,19 +38,9 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			async getBoardSchemaForResourceMapper(
 				this: ILoadOptionsFunctions,
 			): Promise<ResourceMapperFields> {
-				this.logger.info(`getBoardSchemaForResourceMapper()`)
-
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
 				if (!selectedBoardId || !selectedBoardId) {
-					return { fields: [] }
-				}
-
-				const parsedBoardId =
-					typeof selectedBoardId === "string"
-						? Number(selectedBoardId)
-						: (selectedBoardId as number)
-				if (Number.isNaN(parsedBoardId)) {
-					return { fields: [] }
+					return { fields: [], emptyFieldsNotice: "No board selected." }
 				}
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
@@ -58,8 +48,8 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					body: null,
 				})
 
-				const board = getBoardById({ boards, boardId: parsedBoardId })
-				if (!board) return { fields: [] }
+				const board = getBoardById({ boards, boardId: Number(selectedBoardId) })
+				if (!board) return { fields: [], emptyFieldsNotice: "Board not found." }
 
 				const mapColumnTypeToFieldType = (
 					columnType: string,
@@ -189,12 +179,8 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 				},
 				required: true,
 				displayOptions: {
-					show: {
-						boardId: [
-							// non-empty value
-							// n8n treats empty string as unset
-							'={{ $parameter["boardId"] && $parameter["boardId"] !== "" }}',
-						],
+					hide: {
+						boardId: [""],
 					},
 				},
 				typeOptions: {
