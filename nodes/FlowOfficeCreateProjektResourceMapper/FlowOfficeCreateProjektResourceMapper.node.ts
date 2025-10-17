@@ -166,7 +166,7 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 		},
 	}
 	description: INodeTypeDescription = {
-		displayName: "Create Projekt Resource Mapper (FlowOffice)",
+		displayName: "Create Projekt (FlowOffice)",
 		name: "flowOfficeCreateProjektResourceMapper",
 		icon: {
 			light: "file:FlowOfficeCreateProjektResourceMapper.svg",
@@ -174,9 +174,9 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 		},
 		group: ["input"],
 		version: 1,
-		description: "Map input fields to FlowOffice board columns",
+		description: "Create a new project in FlowOffice, map input fields to FlowOffice board columns",
 		defaults: {
-			name: "Create Project Resource Mapper (FlowOffice)",
+			name: "Create Project (FlowOffice)",
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
