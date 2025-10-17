@@ -1,4 +1,4 @@
-import { helper } from "./transport/api-schema-bundled/helper"
+import { helper } from "../transport/api-schema-bundled/helper"
 import { getBoardById } from "./buildBoardOptions"
 
 import type { INodePropertyOptions } from "n8n-workflow"

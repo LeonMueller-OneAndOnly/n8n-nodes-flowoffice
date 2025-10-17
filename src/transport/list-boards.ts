@@ -1,9 +1,9 @@
-import { apiSchema_v1 } from "./transport/api-schema-bundled/api"
+import { apiSchema_v1 } from "./api-schema-bundled/api"
 
-import { getCredentials_fromOptionsLoader } from "./get-credentials"
+import { getCredentials_fromOptionsLoader } from "../get-credentials"
 
 import type { ILoadOptionsFunctions } from "n8n-workflow"
-import type { ListBoardsOutput } from "./buildBoardOptions"
+import type { ListBoardsOutput } from "../build-options/buildBoardOptions"
 
 export async function fetchBoards(thisArg: ILoadOptionsFunctions): Promise<ListBoardsOutput> {
 	const { baseUrl } = await getCredentials_fromOptionsLoader(thisArg)

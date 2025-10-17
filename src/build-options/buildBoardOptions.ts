@@ -1,4 +1,4 @@
-import { apiSchema_v1 } from "./transport/api-schema-bundled/api"
+import { apiSchema_v1 } from "../transport/api-schema-bundled/api"
 
 import type { INodePropertyOptions } from "n8n-workflow"
 
