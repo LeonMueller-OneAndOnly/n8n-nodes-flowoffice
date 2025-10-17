@@ -66,8 +66,10 @@ const ZListBoardsOutput = z.object({
 const apiSchema_v1 = {
     board: {
         listBoards: {
+            method: "GET",
             pathname: "/api/v1/board/list-boards",
-            schema: ZListBoardsOutput,
+            inputSchema: z.null(),
+            outputSchema: ZListBoardsOutput,
         },
     },
 };

@@ -1,14 +1,16 @@
-import { ILoadOptionsFunctions } from 'n8n-workflow';
+import { ILoadOptionsFunctions } from "n8n-workflow"
 
-const FallbackBaseUrl = 'https://api.flow-office.eu';
+const FallbackBaseUrl = "https://api.flow-office.eu"
 
-export async function getCredentials_fromOptionsLoader(thisArg: ILoadOptionsFunctions) {
-	const creds = (await thisArg.getCredentials('flowOfficeApi')) as {
-		apiKey: string;
-		baseUrl?: string;
-	};
+export async function getCredentials_fromOptionsLoader(
+	thisArg: Pick<ILoadOptionsFunctions, "getCredentials">,
+) {
+	const creds = (await thisArg.getCredentials("flowOfficeApi")) as {
+		apiKey: string
+		baseUrl?: string
+	}
 
-	const baseUrl = (creds.baseUrl || FallbackBaseUrl).replace(/\/$/, '');
+	const baseUrl = (creds.baseUrl || FallbackBaseUrl).replace(/\/$/, "")
 
-	return { creds, baseUrl };
+	return { creds, baseUrl }
 }
