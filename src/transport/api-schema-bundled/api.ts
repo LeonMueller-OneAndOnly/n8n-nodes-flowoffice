@@ -40,6 +40,10 @@ const ZBoard = z.object({
     boardId: z.number().int(),
     name: z.string(),
     columnSchema: ZColumn$1.array(),
+    subboards: z.object({
+        name: z.string(),
+        subboardId: z.number().int(),
+    }),
 });
 const ZListBoardsOutput = z.object({
     boardGroups: z
