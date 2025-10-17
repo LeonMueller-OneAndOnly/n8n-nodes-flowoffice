@@ -165,9 +165,9 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								default: "",
 							},
 							{
-								displayName: "Column Type (Internal) Name or ID",
+								displayName: "Column Type Name or ID",
 								name: "columnType",
-								type: "options",
+								type: "string",
 								default: "",
 								typeOptions: {
 									loadOptionsMethod: "getSelectedColumnType",
@@ -182,6 +182,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 									},
 								},
 							},
+							//  --------- column type specific value input
 							{
 								displayName: "Value",
 								name: "value",
