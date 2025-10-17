@@ -21,7 +21,7 @@ import {
 import { buildOptions_statusLabels } from "../../src/build-options/buildStatusOptions"
 import { locales } from "zod"
 
-export class FlowOfficeCreateProjekt implements INodeType {
+export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 	methods = {
 		loadOptions: {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -104,39 +104,11 @@ export class FlowOfficeCreateProjekt implements INodeType {
 
 				return buildOptions_statusLabels({ boards, boardId, columnKey })
 			},
-
-			// async getSelectedColumnType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-			// 	const selectedBoardId = this.getCurrentNodeParameter("boardId")
-			// 	const columnKey =
-			// 		(this.getCurrentNodeParameter("statusColumnKey") as string | undefined) ??
-			// 		(this.getCurrentNodeParameter("columnKey") as string | undefined)
-
-			// 	if (!selectedBoardId || !columnKey) return []
-
-			// 	const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-			// 		thisArg: this,
-			// 		body: null,
-			// 	})
-
-			// 	const board = getBoardById({ boards, boardId: Number(selectedBoardId) })
-			// 	if (!board) return []
-
-			// 	const col = board.columnSchema.find((c) => c.columnKey === columnKey)
-			// 	if (!col) return []
-
-			// 	return [
-			// 		{
-			// 			name: col.columnType,
-			// 			value: col.columnType,
-			// 			description: `Detected type for ${columnKey}`,
-			// 		},
-			// 	]
-			// },
 		},
 	}
 	description: INodeTypeDescription = {
-		displayName: "Create Projekt (FlowOffice)",
-		name: "flowOfficeCreateProjekt",
+		displayName: "Create Projekt Resource Mapper (FlowOffice)",
+		name: "flowOfficeCreateProjektResourceMapper",
 		icon: {
 			light: "file:FlowOfficeCreateProjekt.svg",
 			dark: "file:FlowOfficeCreateProjekt.dark.svg",
