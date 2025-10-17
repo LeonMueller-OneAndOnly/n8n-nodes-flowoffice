@@ -127,19 +127,10 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					return base
 				})
 
-				const debugField = {
-					id: "__debug__",
-					displayName: "Debug Field",
-					defaultMatch: false,
-					canBeUsedToMatch: false,
-					required: false,
-					display: true,
-					type: "string" as const,
+				return {
+					fields: fieldsFromSchema,
+					emptyFieldsNotice: "No columns found for the selected board.",
 				}
-
-				const fields = [debugField, ...fieldsFromSchema]
-
-				return { fields, emptyFieldsNotice: "No columns found for the selected board." }
 			},
 		},
 	}
@@ -197,15 +188,15 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					value: null,
 				},
 				required: true,
-				// displayOptions: {
-				// 	show: {
-				// 		boardId: [
-				// 			// non-empty value
-				// 			// n8n treats empty string as unset
-				// 			'={{ $parameter["boardId"] && $parameter["boardId"] !== "" }}',
-				// 		],
-				// 	},
-				// },
+				displayOptions: {
+					show: {
+						boardId: [
+							// non-empty value
+							// n8n treats empty string as unset
+							'={{ $parameter["boardId"] && $parameter["boardId"] !== "" }}',
+						],
+					},
+				},
 				typeOptions: {
 					resourceMapper: {
 						resourceMapperMethod: "getBoardSchemaForResourceMapper",
