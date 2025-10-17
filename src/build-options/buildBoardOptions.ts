@@ -48,25 +48,14 @@ export function buildOptions_subboardId(input: {
 	boards: ListBoardsOutput
 	boardId: number
 }): INodePropertyOptions[] {
-	const board = getBoardById(input) as unknown as
-		| {
-				subboards?: unknown
-				subBoards?: unknown
-		  }
-		| undefined
+	const board = getBoardById(input)
 
-	const subboardsRaw = board && (board.subboards ?? (board as any).subBoards)
-	if (!subboardsRaw || !Array.isArray(subboardsRaw)) return []
+	if (!board) return []
 
 	const options: INodePropertyOptions[] = []
 
-	for (const sb of subboardsRaw as Array<any>) {
-		const idCandidate = sb?.subboardId ?? sb?.subBoardId ?? sb?.boardId ?? sb?.id ?? sb?.value
-		const nameCandidate = sb?.name ?? sb?.label ?? String(idCandidate ?? "Subboard")
-
-		if (idCandidate === undefined || idCandidate === null) continue
-
-		options.push({ name: String(nameCandidate), value: idCandidate })
+	for (const aSubboard of board.subboards) {
+		options.push({ name: aSubboard.name, value: aSubboard.subboardId })
 	}
 
 	return options
