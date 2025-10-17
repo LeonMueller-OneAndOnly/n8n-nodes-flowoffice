@@ -1,6 +1,6 @@
 import { getCredentials_fromOptionsLoader } from "../get-credentials"
 
-import { IHttpRequestMethods, ILoadOptionsFunctions } from "n8n-workflow"
+import { IHttpRequestMethods, ILoadOptionsFunctions, IExecuteFunctions } from "n8n-workflow"
 import z from "zod"
 
 export async function invokeEndpoint<S_input extends z.Schema, S_output extends z.Schema>(
@@ -11,7 +11,7 @@ export async function invokeEndpoint<S_input extends z.Schema, S_output extends 
 		pathname: string
 	},
 	input: {
-		thisArg: ILoadOptionsFunctions
+		thisArg: ILoadOptionsFunctions | IExecuteFunctions
 		body: z.input<S_input>
 	},
 ): Promise<z.output<S_output>> {
