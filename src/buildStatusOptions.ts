@@ -1,5 +1,5 @@
-import { getBoardById } from './buildBoardOptions';
 import { helper } from './api-schema-bundled/helper';
+import { getBoardById } from './buildBoardOptions';
 
 import type { INodePropertyOptions } from 'n8n-workflow';
 import type { ListBoardsOutput } from './buildBoardOptions';
