@@ -173,10 +173,11 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 				displayName: "Board Name or ID",
 				placeholder: "Select a board",
 				name: "boardId",
-				// description: 'The description text',
+
 				type: "options",
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>. <br/>Each board has different columns. Provide a mapping for which input field should go to which column in your selected board.',
+
 				default: "",
 				required: true,
 				typeOptions: {
@@ -190,6 +191,7 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 				name: "resourceMapper",
 				description: "Map input fields to FlowOffice board columns",
 				type: "resourceMapper",
+				allowArbitraryValues: true,
 				default: {
 					// mappingMode can be defined in the component (mappingMode: 'defineBelow')
 					// or you can attempt automatic mapping (mappingMode: 'autoMapInputData')
@@ -198,21 +200,24 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					value: null,
 				},
 				required: true,
+
 				displayOptions: {
 					hide: {
 						boardId: [""],
 					},
 				},
 				typeOptions: {
+					loadOptionsDependsOn: ["boardId"],
 					resourceMapper: {
+						valuesLabel: "Column mapping",
 						resourceMapperMethod: "getBoardSchemaForResourceMapper",
 						mode: "add",
 						fieldWords: { singular: "column", plural: "columns" },
 						addAllFields: true,
-						supportAutoMap: true,
+						supportAutoMap: false,
+						showTypeConversionOptions: false,
 						noFieldsError: "Select a board first to load its columns.",
 					},
-					loadOptionsDependsOn: ["boardId"],
 				},
 			},
 		],
