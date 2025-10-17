@@ -236,11 +236,13 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 		const outputItems: INodeExecutionData[] = []
 		for (let itemIndex = 0; itemIndex < inputItems.length; itemIndex++) {
-			const resourceMapper = this.getNodeParameter("resourceMapper", itemIndex, {})
+			const resourceMapper = this.getNodeParameter("resourceMapper", itemIndex, {}) as {
+				value: Record<string, unknown>
+			}
 
 			if (
-				!resourceMapper ||
 				typeof resourceMapper !== "object" ||
+				!resourceMapper ||
 				!("value" in resourceMapper) ||
 				typeof resourceMapper.value !== "object"
 			) {
