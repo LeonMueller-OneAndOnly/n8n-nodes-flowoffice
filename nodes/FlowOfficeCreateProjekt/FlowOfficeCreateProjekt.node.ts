@@ -73,9 +73,10 @@ export class FlowOfficeCreateProjekt implements INodeType {
 
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				const columnKey =
-					(this.getCurrentNodeParameter("statusColumnKey") as string | undefined) ??
-					(this.getCurrentNodeParameter("columnKey") as string | undefined)
+				const columnKey = this.getCurrentNodeParameter("statusColumnKey")
+
+				this.logger.info("listStatusLabels")
+				this.logger.info(`columnKey ${columnKey}`)
 
 				if (!selectedBoardId || typeof columnKey !== "string") return []
 
@@ -95,33 +96,33 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				return buildOptions_statusLabels({ boards, boardId, columnKey })
 			},
 
-			async getSelectedColumnType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				const columnKey =
-					(this.getCurrentNodeParameter("statusColumnKey") as string | undefined) ??
-					(this.getCurrentNodeParameter("columnKey") as string | undefined)
+			// async getSelectedColumnType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			// 	const selectedBoardId = this.getCurrentNodeParameter("boardId")
+			// 	const columnKey =
+			// 		(this.getCurrentNodeParameter("statusColumnKey") as string | undefined) ??
+			// 		(this.getCurrentNodeParameter("columnKey") as string | undefined)
 
-				if (!selectedBoardId || !columnKey) return []
+			// 	if (!selectedBoardId || !columnKey) return []
 
-				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
-				})
+			// 	const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+			// 		thisArg: this,
+			// 		body: null,
+			// 	})
 
-				const board = getBoardById({ boards, boardId: Number(selectedBoardId) })
-				if (!board) return []
+			// 	const board = getBoardById({ boards, boardId: Number(selectedBoardId) })
+			// 	if (!board) return []
 
-				const col = board.columnSchema.find((c) => c.columnKey === columnKey)
-				if (!col) return []
+			// 	const col = board.columnSchema.find((c) => c.columnKey === columnKey)
+			// 	if (!col) return []
 
-				return [
-					{
-						name: col.columnType,
-						value: col.columnType,
-						description: `Detected type for ${columnKey}`,
-					},
-				]
-			},
+			// 	return [
+			// 		{
+			// 			name: col.columnType,
+			// 			value: col.columnType,
+			// 			description: `Detected type for ${columnKey}`,
+			// 		},
+			// 	]
+			// },
 		},
 	}
 	description: INodeTypeDescription = {
