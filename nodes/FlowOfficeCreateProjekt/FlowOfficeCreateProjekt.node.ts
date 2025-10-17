@@ -36,12 +36,12 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					body: null,
 				})
 
-				const boardIdNum =
+				const boardId =
 					typeof selectedBoardId === "string"
 						? parseInt(selectedBoardId, 10)
 						: (selectedBoardId as number)
 
-				return buildOptions_columnsForBoard(boards, boardIdNum)
+				return buildOptions_columnsForBoard({ boards, boardId })
 			},
 
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -55,13 +55,14 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					thisArg: this,
 					body: null,
 				})
-				const boardIdNum =
+
+				const boardId =
 					typeof selectedBoardId === "string"
 						? parseInt(selectedBoardId, 10)
 						: (selectedBoardId as number)
 
 				if (!columnKey) return []
-				return buildOptions_statusLabels(boards, boardIdNum, columnKey)
+				return buildOptions_statusLabels({ boards, boardId, columnKey })
 			},
 
 			async getSelectedColumnType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {

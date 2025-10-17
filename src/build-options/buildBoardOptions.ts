@@ -30,13 +30,13 @@ export function buildOptions_boardId(parsed: ListBoardsOutput): INodePropertyOpt
 	return options
 }
 
-export function getBoardById(parsed: ListBoardsOutput, boardId: number) {
-	for (const topGroup of parsed.boardGroups) {
+export function getBoardById(input: { boards: ListBoardsOutput; boardId: number }) {
+	for (const topGroup of input.boards.boardGroups) {
 		for (const item of topGroup.boards) {
 			if (item.type === "board") {
-				if (item.board.boardId === boardId) return item.board
+				if (item.board.boardId === input.boardId) return item.board
 			} else {
-				const found = item.boards.find((b) => b.boardId === boardId)
+				const found = item.boards.find((b) => b.boardId === input.boardId)
 				if (found) return found
 			}
 		}
@@ -44,11 +44,11 @@ export function getBoardById(parsed: ListBoardsOutput, boardId: number) {
 	return undefined
 }
 
-export function buildOptions_columnsForBoard(
-	parsed: ListBoardsOutput,
-	boardId: number,
-): INodePropertyOptions[] {
-	const board = getBoardById(parsed, boardId)
+export function buildOptions_columnsForBoard(input: {
+	boards: ListBoardsOutput
+	boardId: number
+}): INodePropertyOptions[] {
+	const board = getBoardById(input)
 	if (!board) return []
 	return board.columnSchema.map((col) => ({
 		name: `${col.label} (${col.columnType})`,
@@ -85,8 +85,9 @@ export function buildOptions_columnsForBoardFiltered(
 		| "lager"
 	>,
 ): INodePropertyOptions[] {
-	const board = getBoardById(parsed, boardId)
+	const board = getBoardById({ boards: parsed, boardId })
 	if (!board) return []
+
 	return board.columnSchema
 		.filter((col) => allowedTypes.includes(col.columnType as (typeof allowedTypes)[number]))
 		.map((col) => ({
