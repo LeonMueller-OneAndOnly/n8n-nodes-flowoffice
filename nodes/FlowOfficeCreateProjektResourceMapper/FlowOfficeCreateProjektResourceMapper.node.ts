@@ -279,6 +279,7 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 		const outputItems: INodeExecutionData[] = []
 
 		const inputItems = this.getInputData()
+		const mappedPerItem: { mapped: IDataObject; itemIndex: number }[] = []
 		for (let itemIndex = 0; itemIndex < inputItems.length; itemIndex++) {
 			const resourceMapper = this.getNodeParameter("resourceMapper", itemIndex, {}) as {
 				value: Record<string, unknown>
@@ -293,18 +294,46 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 				continue
 			}
 
-			const mapped = resourceMapper.value
-
-			outputItems.push({
-				json: { mapped, boardId, subboardId },
-				error: undefined,
-				pairedItem: { item: itemIndex },
-			})
+			mappedPerItem.push({ mapped: resourceMapper.value as unknown as IDataObject, itemIndex })
 		}
 
-		// Placeholder for future batching behavior if needed
-		for (const _ of chunk(outputItems, 30)) {
-			// Intentionally left blank until upload endpoint is available
+		for (const aChunk of chunk(mappedPerItem, 30)) {
+			const body = {
+				projects_mappedcolumnKey_toValue: aChunk.map((x) => x.mapped),
+				boardId,
+				subBoardId: subboardId,
+			}
+
+			const uploadResult = await tryTo_async(async () =>
+				invokeEndpoint(n8nApi_v1.endpoints.project.createProjects, {
+					thisArg: this,
+					body,
+				}),
+			)
+
+			if (uploadResult.success) {
+				const created = uploadResult.data.projekte
+				for (let i = 0; i < aChunk.length; i++) {
+					const inputRef = aChunk[i]!
+					const createdOut = created[i]
+					outputItems.push({
+						json: { boardId, subboardId, mapped: inputRef.mapped, created: createdOut },
+						pairedItem: { item: inputRef.itemIndex },
+					})
+				}
+			} else {
+				if (this.continueOnFail()) {
+					for (const inputRef of aChunk) {
+						outputItems.push({
+							json: { boardId, subboardId, mapped: inputRef.mapped },
+							error: undefined,
+							pairedItem: { item: inputRef.itemIndex },
+						})
+					}
+				} else {
+					throw new Error(String(uploadResult.error))
+				}
+			}
 		}
 
 		return [outputItems]
