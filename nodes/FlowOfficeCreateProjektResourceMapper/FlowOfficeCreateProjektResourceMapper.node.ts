@@ -5,6 +5,7 @@ import type {
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
+	ResourceMapperFields,
 } from "n8n-workflow"
 import { NodeConnectionTypes } from "n8n-workflow"
 
@@ -33,21 +34,31 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			},
 		},
 
-		resourceMapper: {
-			async getBoardSchemaForResourceMapper(this: ILoadOptionsFunctions) {
-				this.logger.info(`hey `)
+		resourceMapping: {
+			async getBoardSchemaForResourceMapper(
+				this: ILoadOptionsFunctions,
+			): Promise<ResourceMapperFields> {
+				this.logger.info(`getBoardSchemaForResourceMapper()`)
 
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				if (!selectedBoardId) return { fields: [] }
+				if (!selectedBoardId || !selectedBoardId) {
+					return { fields: [] }
+				}
 
-				this.logger.info(`selectedBoardId ${selectedBoardId}`)
+				const parsedBoardId =
+					typeof selectedBoardId === "string"
+						? Number(selectedBoardId)
+						: (selectedBoardId as number)
+				if (Number.isNaN(parsedBoardId)) {
+					return { fields: [] }
+				}
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
 					thisArg: this,
 					body: null,
 				})
 
-				const board = getBoardById({ boards, boardId: Number(selectedBoardId) })
+				const board = getBoardById({ boards, boardId: parsedBoardId })
 				if (!board) return { fields: [] }
 
 				const mapColumnTypeToFieldType = (
@@ -94,7 +105,7 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					}
 				}
 
-				const fields = board.columnSchema.map((col) => {
+				const fieldsFromSchema = board.columnSchema.map((col) => {
 					const base: any = {
 						id: col.columnKey,
 						displayName: col.label,
@@ -116,7 +127,19 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					return base
 				})
 
-				return { fields }
+				const debugField = {
+					id: "__debug__",
+					displayName: "Debug Field",
+					defaultMatch: false,
+					canBeUsedToMatch: false,
+					required: false,
+					display: true,
+					type: "string" as const,
+				}
+
+				const fields = [debugField, ...fieldsFromSchema]
+
+				return { fields, emptyFieldsNotice: "No columns found for the selected board." }
 			},
 		},
 	}
@@ -164,15 +187,35 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			{
 				displayName: "Fields",
 				name: "resourceMapper",
-				type: "resourceMapper",
-				default: {},
 				description: "Map input fields to FlowOffice board columns",
+				type: "resourceMapper",
+				default: {
+					// mappingMode can be defined in the component (mappingMode: 'defineBelow')
+					// or you can attempt automatic mapping (mappingMode: 'autoMapInputData')
+					mappingMode: "defineBelow",
+					// Important: always set default value to null
+					value: null,
+				},
+				required: true,
+				// displayOptions: {
+				// 	show: {
+				// 		boardId: [
+				// 			// non-empty value
+				// 			// n8n treats empty string as unset
+				// 			'={{ $parameter["boardId"] && $parameter["boardId"] !== "" }}',
+				// 		],
+				// 	},
+				// },
 				typeOptions: {
-					resourceMapperMethod: "getBoardSchemaForResourceMapper",
-					mode: "add",
-					fieldWords: { singular: "column", plural: "columns" },
-					addAllFields: true,
-					supportAutoMap: true,
+					resourceMapper: {
+						resourceMapperMethod: "getBoardSchemaForResourceMapper",
+						mode: "add",
+						fieldWords: { singular: "column", plural: "columns" },
+						addAllFields: true,
+						supportAutoMap: true,
+						noFieldsError: "Select a board first to load its columns.",
+					},
+					loadOptionsDependsOn: ["boardId"],
 				},
 			},
 		],
