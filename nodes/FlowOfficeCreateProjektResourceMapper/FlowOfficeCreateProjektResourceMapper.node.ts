@@ -15,7 +15,11 @@ import { NodeConnectionTypes } from "n8n-workflow"
 import { invokeEndpoint } from "../../src/transport/invoke-api"
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
 import { helper } from "../../src/transport/api-schema-bundled/helper"
-import { buildOptions_boardId, getBoardById } from "../../src/build-options/buildBoardOptions"
+import {
+	buildOptions_boardId,
+	buildOptions_subboardId,
+	getBoardById,
+} from "../../src/build-options/buildBoardOptions"
 
 import z from "zod"
 import { getColumnTypeDisplayName } from "../../src/column-type-display-name"
@@ -30,6 +34,19 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					thisArg: this,
 					body: null,
 				}).then(buildOptions_boardId)
+			},
+
+			async listSubboards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter("boardId")
+				if (!selectedBoardId) return []
+
+				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
+
+				const boardId = Number(selectedBoardId)
+				return buildOptions_subboardId({ boards, boardId })
 			},
 		},
 
@@ -191,6 +208,26 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			},
 
 			{
+				displayName: "Subboard",
+				name: "subboardId",
+				type: "options",
+				description:
+					"Choose a subboard of the selected board. The list populates after selecting a board.",
+				default: "",
+				required: false,
+				displayOptions: {
+					hide: {
+						boardId: [""],
+					},
+				},
+				typeOptions: {
+					loadOptionsDependsOn: ["boardId"],
+					loadOptionsMethod: "listSubboards",
+				},
+				hint: "Select a board first to load its subboards.",
+			},
+
+			{
 				displayName: "Fields",
 				name: "resourceMapper",
 				description: "Map input fields to FlowOffice board columns",
@@ -265,16 +302,9 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			})
 		}
 
-		for (const aChunk of chunk(outputItems, 30)) {
-			const uploadResult = await tryTo_async(async () =>
-				invokeEndpoint(n8nApi_v1.endpoints.projekt.createProjekt, {}),
-			)
-
-			if (uploadResult.success) {
-				//
-			} else {
-				//
-			}
+		// Placeholder for future batching behavior if needed
+		for (const _ of chunk(outputItems, 30)) {
+			// Intentionally left blank until upload endpoint is available
 		}
 
 		return [outputItems]

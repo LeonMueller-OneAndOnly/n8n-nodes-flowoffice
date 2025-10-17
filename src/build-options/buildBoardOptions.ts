@@ -44,6 +44,34 @@ export function getBoardById(input: { boards: ListBoardsOutput; boardId: number 
 	return undefined
 }
 
+export function buildOptions_subboardId(input: {
+	boards: ListBoardsOutput
+	boardId: number
+}): INodePropertyOptions[] {
+	const board = getBoardById(input) as unknown as
+		| {
+				subboards?: unknown
+				subBoards?: unknown
+		  }
+		| undefined
+
+	const subboardsRaw = board && (board.subboards ?? (board as any).subBoards)
+	if (!subboardsRaw || !Array.isArray(subboardsRaw)) return []
+
+	const options: INodePropertyOptions[] = []
+
+	for (const sb of subboardsRaw as Array<any>) {
+		const idCandidate = sb?.subboardId ?? sb?.subBoardId ?? sb?.boardId ?? sb?.id ?? sb?.value
+		const nameCandidate = sb?.name ?? sb?.label ?? String(idCandidate ?? "Subboard")
+
+		if (idCandidate === undefined || idCandidate === null) continue
+
+		options.push({ name: String(nameCandidate), value: idCandidate })
+	}
+
+	return options
+}
+
 export function buildOptions_columnsForBoard(input: {
 	boards: ListBoardsOutput
 	boardId: number
