@@ -105,6 +105,20 @@ z.object({
     type: ZColumnType,
 });
 
+const ZCreateProjectsInput = z.object({
+    projects_mappedcolumnKey_toValue: z.record(z.string(), z.unknown()).array(),
+    boardId: z.number().int(),
+    subBoardId: z.number().int(),
+});
+const ZCreateProjectsOutput = z.object({
+    projekte: z
+        .object({
+        dbId: z.number().int(),
+        uuid: z.string(),
+    })
+        .array(),
+});
+
 const n8nApi_v1 = {
     endpoints: {
         board: {
@@ -113,6 +127,14 @@ const n8nApi_v1 = {
                 pathname: "/api/v1/board/list-boards",
                 inputSchema: z.null(),
                 outputSchema: ZListBoardsOutput,
+            },
+        },
+        project: {
+            createProjects: {
+                method: "POST",
+                pathname: "/api/v1/project/create-projects",
+                inputSchema: ZCreateProjectsInput,
+                outputSchema: ZCreateProjectsOutput,
             },
         },
     },
