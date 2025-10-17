@@ -10,6 +10,7 @@ import { NodeConnectionTypes } from "n8n-workflow"
 
 import { invokeEndpoint } from "../../src/transport/invoke-api"
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
+import { helper } from "../../src/transport/api-schema-bundled/helper"
 
 import {
 	buildOptions_boardId,
@@ -30,79 +31,88 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 					body: null,
 				}).then(buildOptions_boardId)
 			},
+		},
 
-			async listColumnsAll(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		resourceMapper: {
+			async getBoardSchemaForResourceMapper(this: ILoadOptionsFunctions) {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				if (!selectedBoardId) return []
+				if (!selectedBoardId) return { fields: [] }
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
 					thisArg: this,
 					body: null,
 				})
 
-				const boardId = Number(selectedBoardId)
+				const board = getBoardById({ boards, boardId: Number(selectedBoardId) })
+				if (!board) return { fields: [] }
 
-				return buildOptions_columnsForBoard({ boards, boardId })
-			},
+				const mapColumnTypeToFieldType = (
+					columnType: string,
+				):
+					| "string"
+					| "number"
+					| "dateTime"
+					| "boolean"
+					| "time"
+					| "array"
+					| "object"
+					| "options" => {
+					switch (columnType) {
+						case "number":
+							return "number"
+						case "date":
+							return "dateTime"
+						case "checkbox":
+							return "boolean"
+						case "status":
+							return "options"
+						// treat the following as strings in the UI
+						case "name":
+						case "text":
+						case "interval":
+						case "phone":
+						case "email":
+						case "address":
+						case "rating-stars":
+						case "erneut-kontaktieren":
+						case "link":
+						case "personName":
+						case "zeitauswertung":
+						case "formel":
+						case "dokument":
+						case "kunde":
+						case "teamMember":
+						case "aufgaben":
+						case "cloud":
+						case "lager":
+						default:
+							return "string"
+					}
+				}
 
-			async listColumnsStatusOnly(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				if (!selectedBoardId) return []
+				const fields = board.columnSchema.map((col) => {
+					const base: any = {
+						id: col.columnKey,
+						displayName: col.label,
+						defaultMatch: col.columnType === "name",
+						canBeUsedToMatch: col.columnType === "name",
+						required: col.columnType === "name",
+						display: true,
+						type: mapColumnTypeToFieldType(col.columnType as string),
+					}
 
-				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
+					if (col.columnType === "status") {
+						const { labels } = helper.parseStatus_columnJson({ columnJSON: col.columnJSON ?? "" })
+						base.options = labels.map((l: { label: string; enumKey: string }) => ({
+							name: l.label,
+							value: l.enumKey,
+						}))
+					}
+
+					return base
 				})
 
-				const boardId = Number(selectedBoardId)
-				return buildOptions_columnsForBoard_statusOnly(boards, boardId)
-			},
-
-			async listColumnsNonStatus(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				if (!selectedBoardId) return []
-
-				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
-				})
-
-				const boardId = Number(selectedBoardId)
-				return buildOptions_columnsForBoard_nonStatus(boards, boardId)
-			},
-
-			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-
-				// In fixedCollection context, sibling parameters may require fully-qualified paths.
-				// Try local sibling first, then fall back to the fully-qualified path within the collection.
-				const localColumnKey = this.getCurrentNodeParameter("statusColumnKey") as string | undefined
-				const qualifiedColumnKey = this.getCurrentNodeParameter(
-					"statusMappings.mappings.statusColumnKey",
-				) as string | undefined
-
-				const columnKey =
-					localColumnKey && typeof localColumnKey === "string" ? localColumnKey : qualifiedColumnKey
-
-				this.logger.info("listStatusLabels")
-				this.logger.info(`columnKey ${columnKey}`)
-
-				if (!selectedBoardId || typeof columnKey !== "string") return []
-
-				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
-				})
-
-				const boardId = Number(selectedBoardId)
-
-				const board = getBoardById({ boards, boardId })
-				if (!board) return []
-
-				const column = board.columnSchema.find((c) => c.columnKey === columnKey)
-				if (!column || column.columnType !== "status") return []
-
-				return buildOptions_statusLabels({ boards, boardId, columnKey })
+				return { fields }
 			},
 		},
 	}
@@ -148,84 +158,18 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			},
 
 			{
-				displayName: "Regular Column Mappings",
-				name: "valueMappings",
-				description: "Set values for non-status columns",
-				type: "fixedCollection",
-				placeholder: "Add regular column mapping",
-				default: { mappings: [] },
+				displayName: "Fields",
+				name: "resourceMapper",
+				type: "resourceMapper",
+				default: {},
+				description: "Map input fields to FlowOffice board columns",
 				typeOptions: {
-					multipleValues: true,
-					loadOptionsDependsOn: ["boardId"],
+					resourceMapperMethod: "getBoardSchemaForResourceMapper",
+					mode: "add",
+					fieldWords: { singular: "column", plural: "columns" },
+					addAllFields: true,
+					supportAutoMap: true,
 				},
-				options: [
-					{
-						displayName: "Mapping",
-						name: "mappings",
-						values: [
-							{
-								displayName: "Column Name or ID",
-								name: "columnKey",
-								type: "options",
-								required: true,
-								typeOptions: {
-									loadOptionsMethod: "listColumnsNonStatus",
-									loadOptionsDependsOn: ["boardId"],
-								},
-								description: "Choose a non-status column",
-								default: "",
-							},
-							{
-								displayName: "Value",
-								name: "value",
-								type: "string",
-								default: "",
-								description: "Use expressions to map from input JSON",
-							},
-						],
-					},
-				],
-			},
-			{
-				displayName: "Status-Column Mappings",
-				name: "statusMappings",
-				description:
-					"Each status-column can have different labels. First select the status-column and then specify which label shall be used for the new projekt.",
-				hint: "Each status-column can have different labels. First select the status-column and then specify which label shall be used for the new projekt.",
-				type: "fixedCollection",
-				placeholder: "Add status column mapping",
-				default: { mappings: [] },
-				typeOptions: {
-					multipleValues: true,
-					loadOptionsDependsOn: ["boardId"],
-				},
-				options: [
-					{
-						displayName: "Mapping",
-						name: "mappings",
-						values: [
-							{
-								displayName: "Status Column",
-								name: "statusColumnKey",
-								type: "options",
-								required: true,
-								typeOptions: {
-									loadOptionsMethod: "listColumnsStatusOnly",
-									loadOptionsDependsOn: ["boardId"],
-								},
-								description: "Choose a status column",
-								hint: "Each status-column can have different labels. First select the status-column and then specify which label shall be used for the new projekt.",
-								default: "",
-							},
-							{
-								displayName: "Label Name or ID",
-								name: "statusLabel",
-								type: "string",
-								default: "",
-							},
-						],
-					},
-				],
 			},
 		],
 	}
