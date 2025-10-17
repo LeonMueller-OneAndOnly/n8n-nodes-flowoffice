@@ -19,6 +19,8 @@ import { buildOptions_boardId, getBoardById } from "../../src/build-options/buil
 
 import z from "zod"
 import { getColumnTypeDisplayName } from "../../src/column-type-display-name"
+import { chunk } from "../../src/utils/chunk"
+import { tryTo_async } from "../../src/utils/try"
 
 export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 	methods = {
@@ -232,6 +234,11 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			.int()
 			.parse(this.getNodeParameter("boardId", 0, "not-defined"))
 
+		const subboardId = z.coerce
+			.number()
+			.int()
+			.parse(this.getNodeParameter("subboardId", 0, "not-defined"))
+
 		const outputItems: INodeExecutionData[] = []
 
 		const inputItems = this.getInputData()
@@ -252,10 +259,22 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			const mapped = resourceMapper.value
 
 			outputItems.push({
-				json: { mapped, boardId },
+				json: { mapped, boardId, subboardId },
 				error: undefined,
 				pairedItem: { item: itemIndex },
 			})
+		}
+
+		for (const aChunk of chunk(outputItems, 30)) {
+			const uploadResult = await tryTo_async(async () =>
+				invokeEndpoint(n8nApi_v1.endpoints.projekt.createProjekt, {}),
+			)
+
+			if (uploadResult.success) {
+				//
+			} else {
+				//
+			}
 		}
 
 		return [outputItems]
