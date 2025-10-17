@@ -270,20 +270,20 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			.number()
 			.int()
 			.parse(this.getNodeParameter("boardId", 0, "not-defined"))
+		this.logger.info(`boardId: ${boardId}`)
 
 		const subboardId = z.coerce
 			.number()
 			.int()
 			.parse(this.getNodeParameter("subboardId", 0, "not-defined"))
+		this.logger.info(`subboardId: ${subboardId}`)
 
 		const outputItems: INodeExecutionData[] = []
 
 		const inputItems = this.getInputData()
 		const mappedPerItem: { mapped: IDataObject; itemIndex: number }[] = []
 		for (let itemIndex = 0; itemIndex < inputItems.length; itemIndex++) {
-			const resourceMapper = this.getNodeParameter("resourceMapper", itemIndex, {}) as {
-				value: Record<string, unknown>
-			}
+			const resourceMapper = this.getNodeParameter("resourceMapper", itemIndex, {})
 
 			if (
 				typeof resourceMapper !== "object" ||
@@ -294,20 +294,20 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 				continue
 			}
 
-			mappedPerItem.push({ mapped: resourceMapper.value as unknown as IDataObject, itemIndex })
+			mappedPerItem.push({ mapped: resourceMapper.value as IDataObject, itemIndex })
 		}
 
-		for (const aChunk of chunk(mappedPerItem, 30)) {
-			const body = {
-				projects_mappedcolumnKey_toValue: aChunk.map((x) => x.mapped),
-				boardId,
-				subBoardId: subboardId,
-			}
+		this.logger.info(`mappedPerItem: ${JSON.stringify(mappedPerItem)}`)
 
+		for (const aChunk of chunk(mappedPerItem, 30)) {
 			const uploadResult = await tryTo_async(async () =>
 				invokeEndpoint(n8nApi_v1.endpoints.project.createProjects, {
 					thisArg: this,
-					body,
+					body: {
+						projects_mappedcolumnKey_toValue: aChunk.map((x) => x.mapped),
+						boardId,
+						subBoardId: subboardId,
+					},
 				}),
 			)
 
