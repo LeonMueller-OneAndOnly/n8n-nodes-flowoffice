@@ -111,6 +111,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					.flatMap((g) => g.boards)
 					.flatMap((b) => (b.type === "board" ? [b.board] : b.boards))
 					.find((b) => b.boardId === boardIdNum)
+
 				const col = board?.columnSchema.find((c) => c.columnKey === columnKey)
 				if (!col) return []
 				return [
