@@ -17,6 +17,7 @@ import { helper } from "../../src/transport/api-schema-bundled/helper"
 import { buildOptions_boardId, getBoardById } from "../../src/build-options/buildBoardOptions"
 
 import z from "zod"
+import { getColumnTypeDisplayName } from "../../src/column-type-display-name"
 
 export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 	methods = {
@@ -106,7 +107,7 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 					const aField: ResourceMapperField = {
 						id: aCol.columnKey,
-						displayName: aCol.label,
+						displayName: `${aCol.label} (${getColumnTypeDisplayName(aCol.columnType)})`,
 						defaultMatch: aCol.columnType === "name",
 						canBeUsedToMatch: aCol.columnType === "name",
 						required: aCol.columnType === "name",
