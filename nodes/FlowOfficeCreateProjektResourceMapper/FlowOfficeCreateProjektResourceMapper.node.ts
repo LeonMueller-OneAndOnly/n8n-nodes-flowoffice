@@ -48,17 +48,17 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 				const mapColumnTypeToFieldType = (
 					columnType: z.infer<typeof n8nApi_v1.schemas.ZColumnType>,
-				): FieldType => {
+				): FieldType | null => {
 					switch (columnType) {
 						case "status":
 							return "options"
 
 						case "number":
 						case "rating-stars":
+						case "interval": // TODO: specify unit (seconds?)
 							return "number"
 
 						case "date":
-						case "interval":
 						case "erneut-kontaktieren":
 							return "dateTime"
 
@@ -77,16 +77,22 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 						case "link":
 							return "url"
 
+						case "cloud":
 						case "kunde":
 						case "aufgaben":
 						case "cloud":
+						case "teamMember":
 							return null
 
 						case "zeitauswertung":
 						case "formel":
 						case "dokument":
-						case "teamMember":
 						case "lager":
+						case "formel":
+						case "dokument":
+						case "lager":
+							return null
+
 						default:
 							const _never: never = columnType
 							return _never
@@ -105,7 +111,8 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 						canBeUsedToMatch: aCol.columnType === "name",
 						required: aCol.columnType === "name",
 						display: true,
-						type,
+						readOnly: type === null,
+						type: type ?? undefined,
 						options: (() => {
 							if (aCol.columnType === "status") {
 								const { labels } = helper.parseStatus_columnJson({
