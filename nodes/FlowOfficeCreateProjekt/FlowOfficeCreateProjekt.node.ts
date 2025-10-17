@@ -14,6 +14,7 @@ import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
 import {
 	buildOptions_boardId,
 	buildOptions_columnsForBoard,
+	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
 import { buildOptions_statusLabels } from "../../src/build-options/buildStatusOptions"
 
@@ -36,40 +37,28 @@ export class FlowOfficeCreateProjekt implements INodeType {
 					body: null,
 				})
 
-				const boardId =
-					typeof selectedBoardId === "string"
-						? parseInt(selectedBoardId, 10)
-						: (selectedBoardId as number)
+				const boardId = Number(selectedBoardId)
 
 				return buildOptions_columnsForBoard({ boards, boardId })
 			},
 
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				if (selectedBoardId === undefined || selectedBoardId === "") return []
-
-				// Prefer the sibling columnKey in the current row
-				const columnKey = this.getCurrentNodeParameter("columnKey") as string | undefined
+				const columnKey = this.getCurrentNodeParameter("columnKey")
+				if (!selectedBoardId || typeof columnKey !== "string") return []
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
 					thisArg: this,
 					body: null,
 				})
 
-				const boardId =
-					typeof selectedBoardId === "string"
-						? parseInt(selectedBoardId, 10)
-						: (selectedBoardId as number)
+				const boardId = Number(selectedBoardId)
 
-				if (!columnKey) return []
+				const board = getBoardById({ boards, boardId })
+				if (!board) return []
 
-				// derive columnType from selected column; only return labels if status column
-				const board = boards.boardGroups
-					.flatMap((g) => g.boards)
-					.flatMap((b) => (b.type === "board" ? [b.board] : b.boards))
-					.find((b) => b.boardId === boardId)
-				const col = board?.columnSchema.find((c) => c.columnKey === columnKey)
-				if (!col || col.columnType !== "status") return []
+				const column = board.columnSchema.find((c) => c.columnKey === columnKey)
+				if (!column || column.columnType !== "status") return []
 
 				return buildOptions_statusLabels({ boards, boardId, columnKey })
 			},
@@ -78,32 +67,14 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
 				const columnKey = this.getCurrentNodeParameter("columnKey")
 
-				this.logger.info(`Selected board ID: ${selectedBoardId}`)
-				this.logger.info(`Selected column key: ${columnKey}`)
-
 				if (!selectedBoardId || !columnKey) return []
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
 					thisArg: this,
 					body: null,
 				})
-				const boardIdNum = Number(selectedBoardId)
 
-				const board = (() => {
-					for (const aGroup of boards.boardGroups) {
-						for (const aItem of aGroup.boards) {
-							if (aItem.type === "board") {
-								if (aItem.board.boardId === boardIdNum) return aItem.board
-							}
-							if (aItem.type === "group") {
-								for (const aBoard of aItem.boards) {
-									if (aBoard.boardId === boardIdNum) return aBoard
-								}
-							}
-						}
-					}
-					return undefined
-				})()
+				const board = getBoardById({ boards, boardId: Number(selectedBoardId) })
 				if (!board) return []
 
 				const col = board.columnSchema.find((c) => c.columnKey === columnKey)
@@ -167,6 +138,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				default: { mappings: [] },
 				typeOptions: {
 					multipleValues: true,
+					loadOptionsDependsOn: ["boardId"],
 				},
 				options: [
 					{
@@ -187,30 +159,28 @@ export class FlowOfficeCreateProjekt implements INodeType {
 								default: "",
 							},
 							{
-								displayName: "Column Type Name or ID",
+								displayName: "Column Type",
 								name: "columnType",
 								type: "options",
 								default: "",
-								typeOptions: {
-									loadOptionsMethod: "getSelectedColumnType",
-									loadOptionsDependsOn: ["boardId", "columnKey"],
-								},
-								description:
-									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-								displayOptions: {
-									// show: {
-									// 	// never show this helper field to users
-									// 	columnKey: ["__never__"],
-									// },
-								},
+								required: true,
+								options: [
+									{ name: "Status", value: "status" },
+									{ name: "Other", value: "other" },
+								],
+								description: "Choose to show either Status selector or Value input",
 							},
-							//  --------- column type specific value input
 							{
 								displayName: "Value",
 								name: "value",
 								type: "string",
 								default: "",
 								description: "Use expressions to map from input JSON (non-status columns)",
+								displayOptions: {
+									hide: {
+										columnType: ["status"],
+									},
+								},
 							},
 							{
 								displayName: "Label Name or ID",
@@ -221,12 +191,20 @@ export class FlowOfficeCreateProjekt implements INodeType {
 									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 								typeOptions: {
 									loadOptionsMethod: "listStatusLabels",
-									loadOptionsDependsOn: [
-										"boardId",
-										// Refresh when the selected column changes
-										"columnKey",
-									],
+									loadOptionsDependsOn: ["boardId", "columnKey"],
 								},
+								displayOptions: {
+									show: {
+										columnType: ["status"],
+									},
+								},
+							},
+							{
+								displayName: "Refresh options",
+								name: "refreshOptions",
+								type: "boolean",
+								default: false,
+								description: "Toggle to refresh dependent options in this mapping",
 							},
 						],
 					},
