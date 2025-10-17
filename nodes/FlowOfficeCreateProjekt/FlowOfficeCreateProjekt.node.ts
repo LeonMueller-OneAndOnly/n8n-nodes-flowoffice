@@ -8,58 +8,28 @@ import type {
 } from "n8n-workflow"
 import { NodeConnectionTypes } from "n8n-workflow"
 
+import { invokeEndpoint } from "../../src/transport/invoke-api"
+import { apiSchema_v1 } from "../../src/transport/api-schema-bundled/api"
+
 import {
 	buildOptions_boardId,
-	buildOptions_columnsForBoard_statusOnly,
 	buildOptions_columnsForBoard,
 } from "../../src/build-options/buildBoardOptions"
 import { buildOptions_statusLabels } from "../../src/build-options/buildStatusOptions"
-import { invokeEndpoint } from "../../src/transport/invoke-api"
-import { apiSchema_v1 } from "../../src/transport/api-schema-bundled/api"
 
 export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
 		loadOptions: {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
+				return invokeEndpoint(apiSchema_v1.board.listBoards, {
 					thisArg: this,
 					body: null,
-				})
-				return buildOptions_boardId(boards)
+				}).then(buildOptions_boardId)
 			},
-			// async listColumnsAll(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-			// 	const selectedBoardId = this.getCurrentNodeParameter('projekt-board');
-			// 	if (selectedBoardId === undefined || selectedBoardId === '') return [];
 
-			// 	const boards = await fetchBoards(this);
-
-			// 	const boardIdNum =
-			// 		typeof selectedBoardId === 'string'
-			// 			? parseInt(selectedBoardId, 10)
-			// 			: (selectedBoardId as number);
-
-			// 	// Return all columns (including status) to simplify UX
-			// 	return buildOptions_columnsForBoard(boards, boardIdNum);
-			// },
-			async listColumnsStatusOnly(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("projekt-board")
-				if (selectedBoardId === undefined || selectedBoardId === "") return []
-
-				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
-					thisArg: this,
-					body: null,
-				})
-
-				const boardIdNum =
-					typeof selectedBoardId === "string"
-						? parseInt(selectedBoardId, 10)
-						: (selectedBoardId as number)
-
-				return buildOptions_columnsForBoard_statusOnly(boards, boardIdNum)
-			},
 			async listColumnsAll(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("projekt-board")
-				if (selectedBoardId === undefined || selectedBoardId === "") return []
+				if (!selectedBoardId) return []
 
 				const boards = await invokeEndpoint(apiSchema_v1.board.listBoards, {
 					thisArg: this,
@@ -73,6 +43,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 
 				return buildOptions_columnsForBoard(boards, boardIdNum)
 			},
+
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("projekt-board")
 				if (selectedBoardId === undefined || selectedBoardId === "") return []
@@ -92,6 +63,7 @@ export class FlowOfficeCreateProjekt implements INodeType {
 				if (!columnKey) return []
 				return buildOptions_statusLabels(boards, boardIdNum, columnKey)
 			},
+
 			async getSelectedColumnType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("projekt-board")
 				const columnKey = this.getCurrentNodeParameter("columnKey") as string | undefined
