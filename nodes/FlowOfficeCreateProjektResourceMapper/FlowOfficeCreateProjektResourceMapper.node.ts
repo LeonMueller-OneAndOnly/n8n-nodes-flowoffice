@@ -270,13 +270,11 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			.number()
 			.int()
 			.parse(this.getNodeParameter("boardId", 0, "not-defined"))
-		this.logger.info(`boardId: ${boardId}`)
 
 		const subboardId = z.coerce
 			.number()
 			.int()
 			.parse(this.getNodeParameter("subboardId", 0, "not-defined"))
-		this.logger.info(`subboardId: ${subboardId}`)
 
 		const outputItems: INodeExecutionData[] = []
 
@@ -296,8 +294,6 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 			mappedPerItem.push({ mapped: resourceMapper.value as IDataObject, itemIndex })
 		}
-
-		this.logger.info(`mappedPerItem: ${JSON.stringify(mappedPerItem)}`)
 
 		for (const aChunk of chunk(mappedPerItem, 30)) {
 			const uploadResult = await tryTo_async(async () =>
