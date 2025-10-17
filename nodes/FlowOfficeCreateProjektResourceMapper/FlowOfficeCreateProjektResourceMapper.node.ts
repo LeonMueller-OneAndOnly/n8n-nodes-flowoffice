@@ -35,8 +35,12 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 		resourceMapper: {
 			async getBoardSchemaForResourceMapper(this: ILoadOptionsFunctions) {
+				this.logger.info(`hey `)
+
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
 				if (!selectedBoardId) return { fields: [] }
+
+				this.logger.info(`selectedBoardId ${selectedBoardId}`)
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
 					thisArg: this,
@@ -120,14 +124,14 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 		displayName: "Create Projekt Resource Mapper (FlowOffice)",
 		name: "flowOfficeCreateProjektResourceMapper",
 		icon: {
-			light: "file:FlowOfficeCreateProjekt.svg",
-			dark: "file:FlowOfficeCreateProjekt.dark.svg",
+			light: "file:FlowOfficeCreateProjektResourceMapper.svg",
+			dark: "file:FlowOfficeCreateProjektResourceMapper.dark.svg",
 		},
 		group: ["input"],
 		version: 1,
-		description: "Create a project in FlowOffice",
+		description: "Map input fields to FlowOffice board columns",
 		defaults: {
-			name: "Create Project (FlowOffice)",
+			name: "Create Project Resource Mapper (FlowOffice)",
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
