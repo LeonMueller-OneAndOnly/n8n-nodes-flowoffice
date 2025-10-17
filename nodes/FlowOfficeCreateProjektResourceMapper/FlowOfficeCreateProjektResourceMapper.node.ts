@@ -1,10 +1,12 @@
 import type {
+	FieldType,
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
 	INodeExecutionData,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
+	ResourceMapperField,
 	ResourceMapperFields,
 } from "n8n-workflow"
 import { NodeConnectionTypes } from "n8n-workflow"
@@ -12,16 +14,9 @@ import { NodeConnectionTypes } from "n8n-workflow"
 import { invokeEndpoint } from "../../src/transport/invoke-api"
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
 import { helper } from "../../src/transport/api-schema-bundled/helper"
+import { buildOptions_boardId, getBoardById } from "../../src/build-options/buildBoardOptions"
 
-import {
-	buildOptions_boardId,
-	buildOptions_columnsForBoard,
-	buildOptions_columnsForBoard_nonStatus,
-	buildOptions_columnsForBoard_statusOnly,
-	getBoardById,
-} from "../../src/build-options/buildBoardOptions"
-import { buildOptions_statusLabels } from "../../src/build-options/buildStatusOptions"
-import { locales } from "zod"
+import z from "zod"
 
 export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 	methods = {
@@ -52,73 +47,91 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 				if (!board) return { fields: [], emptyFieldsNotice: "Board not found." }
 
 				const mapColumnTypeToFieldType = (
-					columnType: string,
-				):
-					| "string"
-					| "number"
-					| "dateTime"
-					| "boolean"
-					| "time"
-					| "array"
-					| "object"
-					| "options" => {
+					columnType: z.infer<typeof n8nApi_v1.schemas.ZColumnType>,
+				): FieldType => {
 					switch (columnType) {
-						case "number":
-							return "number"
-						case "date":
-							return "dateTime"
-						case "checkbox":
-							return "boolean"
 						case "status":
 							return "options"
+
+						case "number":
+						case "rating-stars":
+							return "number"
+
+						case "date":
+						case "interval":
+						case "erneut-kontaktieren":
+							return "dateTime"
+
+						case "checkbox":
+							return "boolean"
+
 						// treat the following as strings in the UI
 						case "name":
 						case "text":
-						case "interval":
 						case "phone":
 						case "email":
 						case "address":
-						case "rating-stars":
-						case "erneut-kontaktieren":
-						case "link":
 						case "personName":
+							return "string"
+
+						case "link":
+							return "url"
+
+						case "kunde":
+						case "aufgaben":
+						case "cloud":
+							return null
+
 						case "zeitauswertung":
 						case "formel":
 						case "dokument":
-						case "kunde":
 						case "teamMember":
-						case "aufgaben":
-						case "cloud":
 						case "lager":
 						default:
-							return "string"
+							const _never: never = columnType
+							return _never
 					}
 				}
 
-				const fieldsFromSchema = board.columnSchema.map((col) => {
-					const base: any = {
-						id: col.columnKey,
-						displayName: col.label,
-						defaultMatch: col.columnType === "name",
-						canBeUsedToMatch: col.columnType === "name",
-						required: col.columnType === "name",
+				const fields: ResourceMapperField[] = []
+
+				for (const aCol of board.columnSchema) {
+					const type = mapColumnTypeToFieldType(aCol.columnType)
+
+					const aField: ResourceMapperField = {
+						id: aCol.columnKey,
+						displayName: aCol.label,
+						defaultMatch: aCol.columnType === "name",
+						canBeUsedToMatch: aCol.columnType === "name",
+						required: aCol.columnType === "name",
 						display: true,
-						type: mapColumnTypeToFieldType(col.columnType as string),
+						type,
+						options: (() => {
+							if (aCol.columnType === "status") {
+								const { labels } = helper.parseStatus_columnJson({
+									columnJSON: aCol.columnJSON ?? "",
+								})
+								return labels.map((l: { label: string; enumKey: string }) => ({
+									name: l.label,
+									value: l.enumKey,
+								}))
+							}
+
+							if (type === "options") {
+								this.logger.error(
+									`Column type ${aCol.columnType} uses the 'options' field type, but does not list any options to choose from`,
+								)
+							}
+
+							return undefined
+						})(),
 					}
 
-					if (col.columnType === "status") {
-						const { labels } = helper.parseStatus_columnJson({ columnJSON: col.columnJSON ?? "" })
-						base.options = labels.map((l: { label: string; enumKey: string }) => ({
-							name: l.label,
-							value: l.enumKey,
-						}))
-					}
-
-					return base
-				})
+					fields.push(aField)
+				}
 
 				return {
-					fields: fieldsFromSchema,
+					fields,
 					emptyFieldsNotice: "No columns found for the selected board.",
 				}
 			},
