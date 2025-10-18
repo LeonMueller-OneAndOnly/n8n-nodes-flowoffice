@@ -27,7 +27,7 @@ import { getColumnTypeDisplayName } from "../../src/column-type-display-name"
 import { chunk } from "../../src/utils/chunk"
 import { tryTo_async } from "../../src/utils/try"
 
-export class flowOfficeCreateProjekt implements INodeType {
+export class FlowOfficeCreateProjekt implements INodeType {
 	methods = {
 		loadOptions: {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
