@@ -132,7 +132,7 @@ const ZGetProjectsInput = z.object({
     projektUuid: z.string().optional(),
     name: z.string().optional(),
     // Fortgeschritten: Statusfilter als einzelnes Feld (z. B. JSON-String)
-    // Beispiel: { "statusLabelKey": "phase", "from": ["offen"], "to": ["erledigt"] }
+    // Beispiel: { "statusLabelKey": "uuid-123", "from": ["offen"], "to": ["erledigt"] }
     status: z
         .object({
         statusLabelKey: z.string().optional(),
@@ -140,6 +140,8 @@ const ZGetProjectsInput = z.object({
         to: z.array(z.string()).optional(),
     })
         .optional(),
+    // Pagination
+    skip: z.number().int().min(0).optional(),
 });
 const ZGetProjectsOutput = z.object({
     projekte: z
@@ -150,6 +152,8 @@ const ZGetProjectsOutput = z.object({
         cellValues_byColumnKey: z.record(z.string(), z.unknown()),
     })
         .array(),
+    hitLimit: z.boolean(),
+    limit: z.number().int(),
 });
 
 const n8nApi_v1 = {
@@ -170,7 +174,7 @@ const n8nApi_v1 = {
                 outputSchema: ZCreateProjectsOutput,
             },
             getProjects: {
-                method: "GET",
+                method: "POST",
                 pathname: "/api/v1/project/get-projects",
                 inputSchema: ZGetProjectsInput,
                 outputSchema: ZGetProjectsOutput,
