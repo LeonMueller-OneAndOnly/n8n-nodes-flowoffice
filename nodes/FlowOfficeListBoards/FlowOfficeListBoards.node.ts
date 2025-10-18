@@ -29,14 +29,14 @@ export class FlowOfficeListBoards implements INodeType {
 		displayName: "List Boards (FlowOffice)",
 		name: "flowOfficeListBoards",
 		icon: {
-			light: "file:FlowOfficeListBoardColumns.svg",
-			dark: "file:FlowOfficeListBoardColumns.dark.svg",
+			light: "file:FlowOfficeListBoards.svg",
+			dark: "file:FlowOfficeListBoards.dark.svg",
 		},
 		group: ["input"],
 		version: 1,
 		description: "Select a board and output all its columns (including status labels)",
 		defaults: {
-			name: "List Board Columns (FlowOffice)",
+			name: "List Boards (FlowOffice)",
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
