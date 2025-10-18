@@ -143,7 +143,7 @@ export class FlowOfficeGetProjects implements INodeType {
 						placeholder: "e.g. Kundenprojekt",
 					},
 					{
-						displayName: "Project ID",
+						displayName: "Project IDs",
 						name: "projectId",
 						type: "number",
 						default: 0,
@@ -158,7 +158,7 @@ export class FlowOfficeGetProjects implements INodeType {
 						hint: "Optional. Comma-separated list of project IDs.",
 					},
 					{
-						displayName: "Project UUID",
+						displayName: "Project UUIDs",
 						name: "projectUuid",
 						type: "string",
 						default: "",
