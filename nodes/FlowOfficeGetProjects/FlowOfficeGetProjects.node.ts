@@ -127,6 +127,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				placeholder: "Add filters",
 				default: {},
 				hint: "These filters are optional. The API is paginated; the response may set 'hitLimit' to true when more results are available.",
+				// eslint-disable-next-line n8n-nodes-base/node-param-collection-type-unsorted-items
 				options: [
 					{
 						displayName: "Name Contains",
