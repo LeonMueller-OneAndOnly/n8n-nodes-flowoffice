@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import superjson from 'superjson';
 
-z.object({
-    enumKey: z.string(),
-});
 const ZStatusColumnOptions = z.array(z.object({
     label: z.string(),
     backgroundColor: z.string(),
