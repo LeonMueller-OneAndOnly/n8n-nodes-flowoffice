@@ -175,6 +175,11 @@ export class FlowOfficeGetProjects implements INodeType {
 						description:
 							'Select a status column to filter by. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 						default: "",
+						displayOptions: {
+							hide: {
+								boardId: [""],
+							},
+						},
 						typeOptions: {
 							loadOptionsDependsOn: ["boardId"],
 							loadOptionsMethod: "listStatusColumns",
@@ -200,6 +205,12 @@ export class FlowOfficeGetProjects implements INodeType {
 						default: [],
 						description:
 							'Only projects whose next state is one of these. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+						displayOptions: {
+							hide: {
+								boardId: [""],
+								"optionalFilters.statusColumnKey": [""],
+							},
+						},
 						typeOptions: {
 							loadOptionsDependsOn: ["boardId", "optionalFilters.statusColumnKey"],
 							loadOptionsMethod: "listStatusLabels",
@@ -235,7 +246,6 @@ export class FlowOfficeGetProjects implements INodeType {
 			0,
 			"",
 		) as string
-		const fromStates = this.getNodeParameter("optionalFilters.fromStates", 0, []) as string[]
 		const status_labels = this.getNodeParameter("optionalFilters.status_labels", 0, []) as string[]
 		const skipRaw = this.getNodeParameter("skip", 0, 0)
 
@@ -243,19 +253,8 @@ export class FlowOfficeGetProjects implements INodeType {
 		const subBoardId = subboardIdRaw ? z.coerce.number().int().parse(subboardIdRaw) : undefined
 		const projectId = projectIdRaw ? z.coerce.number().int().parse(projectIdRaw) : undefined
 
-		const body: {
-			boardId?: number
-			subBoardId?: number
-			projektId?: number | number[]
-			projektUuid?: string | string[]
-			name?: string
-			status?: {
-				statusLabelKey?: string
-				from?: string[]
-				to?: string[]
-			}
-			skip?: number
-		} = {}
+		const body: z.infer<typeof n8nApi_v1.endpoints.project.getProjects.inputSchema> = {}
+
 		if (boardId !== undefined) body.boardId = boardId
 		if (subBoardId !== undefined) body.subBoardId = subBoardId
 		// projektId: number | number[] from single + CSV
@@ -291,7 +290,6 @@ export class FlowOfficeGetProjects implements INodeType {
 		if (statusColumnKey) {
 			body.status = {
 				statusLabelKey: statusColumnKey,
-				from: Array.isArray(fromStates) ? fromStates : [],
 				to: Array.isArray(status_labels) ? status_labels : [],
 			}
 		}
