@@ -192,19 +192,7 @@ export class FlowOfficeGetProjects implements INodeType {
 						},
 					},
 					{
-						displayName: "From Label Names or IDs",
-						name: "fromStates",
-						type: "multiOptions",
-						default: [],
-						description:
-							'Only projects whose current state is one of these. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-						typeOptions: {
-							loadOptionsDependsOn: ["boardId", "optionalFilters.statusColumnKey"],
-							loadOptionsMethod: "listStatusLabels",
-						},
-					},
-					{
-						displayName: "To Label Names or IDs",
+						displayName: "Status Label Names or IDs",
 						name: "status_labels",
 						type: "multiOptions",
 						default: [],
