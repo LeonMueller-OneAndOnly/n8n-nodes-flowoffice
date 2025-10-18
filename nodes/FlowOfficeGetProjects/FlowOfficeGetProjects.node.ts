@@ -217,7 +217,7 @@ export class FlowOfficeGetProjects implements INodeType {
 						displayOptions: {
 							hide: {
 								boardId: [""],
-								"statusFilter.statusColumnKey": [""],
+								statusColumnKey: [""],
 							},
 						},
 						typeOptions: {
