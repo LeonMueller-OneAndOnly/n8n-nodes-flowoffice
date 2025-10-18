@@ -60,7 +60,7 @@ export class FlowOfficeGetProjects implements INodeType {
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
 				const statusColumnKey = this.getCurrentNodeParameter(
-					"optionalFilters.statusColumnKey",
+					"statusFilter.statusColumnKey",
 				) as string
 				if (!selectedBoardId || !statusColumnKey) return []
 
@@ -129,7 +129,6 @@ export class FlowOfficeGetProjects implements INodeType {
 				placeholder: "Add filters",
 				default: {},
 				hint: "These filters are optional. The API is paginated; the response may set 'hitLimit' to true when more results are available.",
-				// eslint-disable-next-line n8n-nodes-base/node-param-collection-type-unsorted-items
 				options: [
 					{
 						displayName: "Name Contains",
@@ -169,24 +168,6 @@ export class FlowOfficeGetProjects implements INodeType {
 						hint: "Optional. Comma-separated list of project UUIDs.",
 					},
 					{
-						displayName: "Status Column Name or ID",
-						name: "statusColumnKey",
-						type: "options",
-						description:
-							'Select a status column to filter by. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-						default: "",
-						displayOptions: {
-							hide: {
-								boardId: [""],
-							},
-						},
-						typeOptions: {
-							loadOptionsDependsOn: ["boardId"],
-							loadOptionsMethod: "listStatusColumns",
-						},
-						hint: "Choose a status column to use with From/To states.",
-					},
-					{
 						displayName: "Subboard Name or ID",
 						name: "subboardId",
 						type: "options",
@@ -198,21 +179,49 @@ export class FlowOfficeGetProjects implements INodeType {
 							loadOptionsMethod: "listSubboards",
 						},
 					},
+				],
+			},
+			{
+				displayName: "Status Filter",
+				name: "statusFilter",
+				type: "collection",
+				placeholder: "Add status filters",
+				default: {},
+				hint: "Filter by a single status column and choose multiple labels.",
+				options: [
+					{
+						displayName: "Status Column Name or ID",
+						name: "statusColumnKey",
+						type: "options",
+						description:
+							'Select a status column to filter by, then choose its labels below. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+						default: "",
+						displayOptions: {
+							hide: {
+								boardId: [""],
+							},
+						},
+						typeOptions: {
+							loadOptionsDependsOn: ["boardId"],
+							loadOptionsMethod: "listStatusColumns",
+						},
+						hint: "Pick one status column first, then select multiple labels below.",
+					},
 					{
 						displayName: "Status Label Names or IDs",
 						name: "status_labels",
 						type: "multiOptions",
 						default: [],
 						description:
-							'Only projects whose next state is one of these. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+							'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 						displayOptions: {
 							hide: {
 								boardId: [""],
-								"optionalFilters.statusColumnKey": [""],
+								"statusFilter.statusColumnKey": [""],
 							},
 						},
 						typeOptions: {
-							loadOptionsDependsOn: ["boardId", "optionalFilters.statusColumnKey"],
+							loadOptionsDependsOn: ["boardId", "statusFilter.statusColumnKey"],
 							loadOptionsMethod: "listStatusLabels",
 						},
 					},
@@ -241,12 +250,8 @@ export class FlowOfficeGetProjects implements INodeType {
 			"",
 		) as string
 		const name = this.getNodeParameter("optionalFilters.name", 0, "") as string
-		const statusColumnKey = this.getNodeParameter(
-			"optionalFilters.statusColumnKey",
-			0,
-			"",
-		) as string
-		const status_labels = this.getNodeParameter("optionalFilters.status_labels", 0, []) as string[]
+		const statusColumnKey = this.getNodeParameter("statusFilter.statusColumnKey", 0, "") as string
+		const status_labels = this.getNodeParameter("statusFilter.status_labels", 0, []) as string[]
 		const skipRaw = this.getNodeParameter("skip", 0, 0)
 
 		const boardId = boardIdRaw ? z.coerce.number().int().parse(boardIdRaw) : undefined
@@ -289,8 +294,8 @@ export class FlowOfficeGetProjects implements INodeType {
 
 		if (statusColumnKey) {
 			body.status = {
-				statusLabelKey: statusColumnKey,
-				to: Array.isArray(status_labels) ? status_labels : [],
+				statusColumnKey: statusColumnKey,
+				filterLabels_keyOrName: Array.isArray(status_labels) ? status_labels : [],
 			}
 		}
 
