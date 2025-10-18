@@ -6,3 +6,4 @@ dist
 src/api-schema-bundled/helper.js.map
 src/api-schema-bundled/api.ts.map
 src/transport/api-schema-bundled/api.ts.map
+src/transport/api-schema-bundled/helper.d.ts.map
