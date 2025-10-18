@@ -146,6 +146,25 @@ export class FlowOfficeGetProjects implements INodeType {
 				hint: "These filters are optional. The API is paginated; the response may set 'hitLimit' to true when more results are available.",
 				options: [
 					{
+						displayName: "From State Names or IDs",
+						name: "fromStates",
+						type: "multiOptions",
+						default: [],
+						description:
+							'Only projects currently in one of these states. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+						typeOptions: {
+							loadOptionsDependsOn: ["boardId", "optionalFilters.statusColumnKey"],
+							loadOptionsMethod: "listStatusLabels",
+						},
+					},
+					{
+						displayName: "Name Contains",
+						name: "name",
+						type: "string",
+						default: "",
+						placeholder: "e.g. Kundenprojekt",
+					},
+					{
 						displayName: "Project ID",
 						name: "projectId",
 						type: "number",
@@ -160,13 +179,6 @@ export class FlowOfficeGetProjects implements INodeType {
 						placeholder: "e.g. 550e8400-e29b-41d4-a716-446655440000",
 					},
 					{
-						displayName: "Name Contains",
-						name: "name",
-						type: "string",
-						default: "",
-						placeholder: "e.g. Kundenprojekt",
-					},
-					{
 						displayName: "Status Column Name or ID",
 						name: "statusColumnKey",
 						type: "options",
@@ -178,18 +190,6 @@ export class FlowOfficeGetProjects implements INodeType {
 							loadOptionsMethod: "listStatusColumns",
 						},
 						hint: "Choose a status column to use with From/To states.",
-					},
-					{
-						displayName: "From State Names or IDs",
-						name: "fromStates",
-						type: "multiOptions",
-						default: [],
-						description:
-							'Only projects currently in one of these states. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-						typeOptions: {
-							loadOptionsDependsOn: ["boardId", "optionalFilters.statusColumnKey"],
-							loadOptionsMethod: "listStatusLabels",
-						},
 					},
 					{
 						displayName: "To State Names or IDs",
