@@ -144,11 +144,27 @@ export class FlowOfficeGetProjects implements INodeType {
 						placeholder: "e.g. 123",
 					},
 					{
+						displayName: "Project IDs (CSV)",
+						name: "projectIdsCsv",
+						type: "string",
+						default: "",
+						placeholder: "e.g. 101,102,103",
+						hint: "Optional. Comma-separated list of project IDs.",
+					},
+					{
 						displayName: "Project UUID",
 						name: "projectUuid",
 						type: "string",
 						default: "",
 						placeholder: "e.g. 550e8400-e29b-41d4-a716-446655440000",
+					},
+					{
+						displayName: "Project UUIDs (CSV)",
+						name: "projectUuidsCsv",
+						type: "string",
+						default: "",
+						placeholder: "e.g. uuid-1,uuid-2",
+						hint: "Optional. Comma-separated list of project UUIDs.",
 					},
 					{
 						displayName: "Status Column Name or ID",
@@ -176,7 +192,19 @@ export class FlowOfficeGetProjects implements INodeType {
 						},
 					},
 					{
-						displayName: "Label Names or IDs",
+						displayName: "From Label Names or IDs",
+						name: "fromStates",
+						type: "multiOptions",
+						default: [],
+						description:
+							'Only projects whose current state is one of these. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+						typeOptions: {
+							loadOptionsDependsOn: ["boardId", "optionalFilters.statusColumnKey"],
+							loadOptionsMethod: "listStatusLabels",
+						},
+					},
+					{
+						displayName: "To Label Names or IDs",
 						name: "status_labels",
 						type: "multiOptions",
 						default: [],
@@ -204,7 +232,13 @@ export class FlowOfficeGetProjects implements INodeType {
 		const boardIdRaw = this.getNodeParameter("boardId", 0, "")
 		const subboardIdRaw = this.getNodeParameter("optionalFilters.subboardId", 0, "")
 		const projectIdRaw = this.getNodeParameter("optionalFilters.projectId", 0, 0)
+		const projectIdsCsv = this.getNodeParameter("optionalFilters.projectIdsCsv", 0, "") as string
 		const projectUuid = this.getNodeParameter("optionalFilters.projectUuid", 0, "") as string
+		const projectUuidsCsv = this.getNodeParameter(
+			"optionalFilters.projectUuidsCsv",
+			0,
+			"",
+		) as string
 		const name = this.getNodeParameter("optionalFilters.name", 0, "") as string
 		const statusColumnKey = this.getNodeParameter(
 			"optionalFilters.statusColumnKey",
@@ -222,8 +256,8 @@ export class FlowOfficeGetProjects implements INodeType {
 		const body: {
 			boardId?: number
 			subBoardId?: number
-			projektId?: number
-			projektUuid?: string
+			projektId?: number | number[]
+			projektUuid?: string | string[]
 			name?: string
 			status?: {
 				statusLabelKey?: string
@@ -234,8 +268,32 @@ export class FlowOfficeGetProjects implements INodeType {
 		} = {}
 		if (boardId !== undefined) body.boardId = boardId
 		if (subBoardId !== undefined) body.subBoardId = subBoardId
-		if (projectId !== undefined) body.projektId = projectId
-		if (projectUuid) body.projektUuid = projectUuid
+		// projektId: number | number[] from single + CSV
+		{
+			const idsFromCsv = (projectIdsCsv || "")
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0)
+				.map((s) => Number(s))
+				.filter((n) => Number.isFinite(n) && Number.isInteger(n))
+			const uniqueIds = Array.from(
+				new Set([...(idsFromCsv || []), ...(projectId !== undefined ? [projectId] : [])]),
+			) as number[]
+			if (uniqueIds.length === 1) body.projektId = uniqueIds[0]
+			else if (uniqueIds.length > 1) body.projektId = uniqueIds
+		}
+
+		// projektUuid: string | string[] from single + CSV
+		{
+			const uuidsFromCsv = (projectUuidsCsv || "")
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0)
+			const allUuids = [...uuidsFromCsv, ...(projectUuid ? [projectUuid] : [])]
+			const uniqueUuids = Array.from(new Set(allUuids))
+			if (uniqueUuids.length === 1) body.projektUuid = uniqueUuids[0]
+			else if (uniqueUuids.length > 1) body.projektUuid = uniqueUuids
+		}
 		if (name) body.name = name
 		const skip = skipRaw ? z.coerce.number().int().min(0).parse(skipRaw) : undefined
 		if (skip !== undefined) body.skip = skip
