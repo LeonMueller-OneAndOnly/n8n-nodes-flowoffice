@@ -189,11 +189,11 @@ export class FlowOfficeGetProjects implements INodeType {
 							loadOptionsDependsOn: ["boardId"],
 							loadOptionsMethod: "listStatusColumns",
 						},
-						hint: "Choose a status column to use with From/To states.",
+						hint: "Choose a status column to use with the labels to filter for.",
 					},
 					{
-						displayName: "To State Names or IDs",
-						name: "toStates",
+						displayName: "Label Names or IDs",
+						name: "status_labels",
 						type: "multiOptions",
 						default: [],
 						description:
@@ -228,7 +228,7 @@ export class FlowOfficeGetProjects implements INodeType {
 			"",
 		) as string
 		const fromStates = this.getNodeParameter("optionalFilters.fromStates", 0, []) as string[]
-		const toStates = this.getNodeParameter("optionalFilters.toStates", 0, []) as string[]
+		const status_labels = this.getNodeParameter("optionalFilters.status_labels", 0, []) as string[]
 		const skipRaw = this.getNodeParameter("skip", 0, 0)
 
 		const boardId = boardIdRaw ? z.coerce.number().int().parse(boardIdRaw) : undefined
@@ -260,7 +260,7 @@ export class FlowOfficeGetProjects implements INodeType {
 			body.status = {
 				statusLabelKey: statusColumnKey,
 				from: Array.isArray(fromStates) ? fromStates : [],
-				to: Array.isArray(toStates) ? toStates : [],
+				to: Array.isArray(status_labels) ? status_labels : [],
 			}
 		}
 
