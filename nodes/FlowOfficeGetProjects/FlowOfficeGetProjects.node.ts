@@ -225,28 +225,38 @@ export class FlowOfficeGetProjects implements INodeType {
 		const subBoardId = subboardIdRaw ? z.coerce.number().int().parse(subboardIdRaw) : undefined
 		const projectId = projectIdRaw ? z.coerce.number().int().parse(projectIdRaw) : undefined
 
-		const body: any = {}
+		const body: {
+			boardId?: number
+			subBoardId?: number
+			projektId?: number
+			projektUuid?: string
+			name?: string
+			status?: {
+				statusLabelKey?: string
+				from?: string[]
+				to?: string[]
+			}
+		} = {}
 		if (boardId !== undefined) body.boardId = boardId
 		if (subBoardId !== undefined) body.subBoardId = subBoardId
-		if (projectId !== undefined) body.projectId = projectId
-		if (projectUuid) body.projectUuid = projectUuid
+		if (projectId !== undefined) body.projektId = projectId
+		if (projectUuid) body.projektUuid = projectUuid
 		if (name) body.name = name
 
 		if (statusColumnKey) {
-			body.statusFilter = {
-				statusColumnKey,
-				fromStates: Array.isArray(fromStates) ? fromStates : [],
-				toStates: Array.isArray(toStates) ? toStates : [],
+			body.status = {
+				statusLabelKey: statusColumnKey,
+				from: Array.isArray(fromStates) ? fromStates : [],
+				to: Array.isArray(toStates) ? toStates : [],
 			}
 		}
 
 		try {
-			// Assume endpoint exists: n8nApi_v1.endpoints.projects.getProjects
-			const response = await invokeEndpoint(
-				// @ts-expect-error endpoint will be added later by user
-				n8nApi_v1.endpoints.projects.getProjects,
-				{ thisArg: this, body },
-			)
+			// Use real endpoint: n8nApi_v1.endpoints.project.getProjects
+			const response = await invokeEndpoint(n8nApi_v1.endpoints.project.getProjects, {
+				thisArg: this,
+				body,
+			})
 
 			const outItem: INodeExecutionData = { json: response as unknown as IDataObject }
 			return [[outItem]]
