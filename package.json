@@ -36,7 +36,7 @@
 		],
 		"nodes": [
 			"dist/nodes/FlowOfficeCreateProject/FlowOfficeCreateProject.node.js",
-			"dist/nodes/FlowOfficeListBoards/FlowOfficeListBoards.node.js"
+			"dist/nodes/FlowOfficeListBoardColumns/FlowOfficeListBoardColumns.node.js"
 		]
 	},
 	"devDependencies": {

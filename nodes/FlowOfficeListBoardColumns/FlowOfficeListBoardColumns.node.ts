@@ -14,7 +14,7 @@ import { helper } from "../../src/transport/api-schema-bundled/helper"
 
 import { buildOptions_boardId, getBoardById } from "../../src/build-options/buildBoardOptions"
 
-export class FlowOfficeListBoards implements INodeType {
+export class FlowOfficeListBoardColumns implements INodeType {
 	methods = {
 		loadOptions: {
 			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -26,17 +26,17 @@ export class FlowOfficeListBoards implements INodeType {
 		},
 	}
 	description: INodeTypeDescription = {
-		displayName: "List Boards (FlowOffice)",
-		name: "flowOfficeListBoards",
+		displayName: "List columns of a board (FlowOffice)",
+		name: "flowOfficeListBoardColumns",
 		icon: {
-			light: "file:FlowOfficeListBoards.svg",
-			dark: "file:FlowOfficeListBoards.dark.svg",
+			light: "file:FlowOfficeListBoardColumns.svg",
+			dark: "file:FlowOfficeListBoardColumns.dark.svg",
 		},
 		group: ["input"],
 		version: 1,
 		description: "Select a board and output all its columns (including status labels)",
 		defaults: {
-			name: "List Boards (FlowOffice)",
+			name: "List columns of a board (FlowOffice)",
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
