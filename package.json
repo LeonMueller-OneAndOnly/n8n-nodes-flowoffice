@@ -35,8 +35,8 @@
 			"dist/credentials/FlowOfficeApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/FlowOfficeListBoardColumns/FlowOfficeListBoardColumns.node.js",
-			"dist/nodes/FlowOfficeCreateProjektResourceMapper/FlowOfficeCreateProjektResourceMapper.node.js"
+			"dist/nodes/FlowOfficeCreateProjektResourceMapper/FlowOfficeCreateProjektResourceMapper.node.js",
+			"dist/nodes/FlowOfficeListBoards/FlowOfficeListBoards.node.js"
 		]
 	},
 	"devDependencies": {
