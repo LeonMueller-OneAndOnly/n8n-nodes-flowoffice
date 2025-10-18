@@ -124,6 +124,33 @@ const ZCreateProjectsOutput = z.object({
     })
         .array(),
 });
+const ZGetProjectsInput = z.object({
+    // Filters (all optional)
+    boardId: z.number().int().optional(),
+    subBoardId: z.number().int().optional(),
+    projektId: z.number().int().optional(),
+    projektUuid: z.string().optional(),
+    name: z.string().optional(),
+    // Fortgeschritten: Statusfilter als einzelnes Feld (z. B. JSON-String)
+    // Beispiel: { "statusLabelKey": "phase", "from": ["offen"], "to": ["erledigt"] }
+    status: z
+        .object({
+        statusLabelKey: z.string().optional(),
+        from: z.array(z.string()).optional(),
+        to: z.array(z.string()).optional(),
+    })
+        .optional(),
+});
+const ZGetProjectsOutput = z.object({
+    projekte: z
+        .object({
+        dbId: z.number().int(),
+        uuid: z.string(),
+        name: z.string(),
+        cellValues_byColumnKey: z.record(z.string(), z.unknown()),
+    })
+        .array(),
+});
 
 const n8nApi_v1 = {
     endpoints: {
@@ -141,6 +168,12 @@ const n8nApi_v1 = {
                 pathname: "/api/v1/project/create-projects",
                 inputSchema: ZCreateProjectsInput,
                 outputSchema: ZCreateProjectsOutput,
+            },
+            getProjects: {
+                method: "GET",
+                pathname: "/api/v1/project/get-projects",
+                inputSchema: ZGetProjectsInput,
+                outputSchema: ZGetProjectsOutput,
             },
         },
     },
