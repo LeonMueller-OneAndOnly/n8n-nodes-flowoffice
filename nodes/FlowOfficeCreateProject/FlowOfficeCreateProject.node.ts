@@ -121,6 +121,8 @@ export class FlowOfficeCreateProject implements INodeType {
 				const fields: ResourceMapperField[] = []
 
 				for (const aCol of board.columnSchema) {
+					if (aCol.deactivated) continue
+
 					const type = mapColumnTypeToFieldType(aCol.columnType)
 
 					const aField: ResourceMapperField = {
