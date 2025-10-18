@@ -59,9 +59,7 @@ export class FlowOfficeGetProjects implements INodeType {
 
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				const statusColumnKey = this.getCurrentNodeParameter(
-					"statusFilter.statusColumnKey",
-				) as string
+				const statusColumnKey = this.getCurrentNodeParameter("statusColumnKey") as string
 				if (!selectedBoardId || !statusColumnKey) return []
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
@@ -187,55 +185,41 @@ export class FlowOfficeGetProjects implements INodeType {
 				],
 			},
 			{
-				displayName: "Status Filter",
-				name: "statusFilter",
-				type: "collection",
-				placeholder: "Add status filters",
-				default: {},
-				hint: "Filter by a single status column and choose multiple labels.",
+				displayName: "Status Column Name or ID",
+				name: "statusColumnKey",
+				type: "options",
+				description:
+					'Select a status column to filter by, then choose its labels below. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				default: "",
 				displayOptions: {
 					hide: {
 						boardId: [""],
 					},
 				},
-				options: [
-					{
-						displayName: "Status Column Name or ID",
-						name: "statusColumnKey",
-						type: "options",
-						description:
-							'Select a status column to filter by, then choose its labels below. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-						default: "",
-						displayOptions: {
-							hide: {
-								boardId: [""],
-							},
-						},
-						typeOptions: {
-							loadOptionsDependsOn: ["boardId"],
-							loadOptionsMethod: "listStatusColumns",
-						},
-						hint: "Pick one status column first, then select multiple labels below.",
+				typeOptions: {
+					loadOptionsDependsOn: ["boardId"],
+					loadOptionsMethod: "listStatusColumns",
+				},
+				hint: "Pick one status column first, then select multiple labels below.",
+			},
+			{
+				displayName: "Status Label Names or IDs",
+				name: "status_labels",
+				type: "multiOptions",
+				default: [],
+				options: [],
+				description:
+					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				displayOptions: {
+					hide: {
+						boardId: [""],
+						statusColumnKey: [""],
 					},
-					{
-						displayName: "Status Label Names or IDs",
-						name: "status_labels",
-						type: "multiOptions",
-						default: [],
-						description:
-							'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-						displayOptions: {
-							hide: {
-								boardId: [""],
-								statusColumnKey: [""],
-							},
-						},
-						typeOptions: {
-							loadOptionsDependsOn: ["boardId", "statusFilter.statusColumnKey"],
-							loadOptionsMethod: "listStatusLabels",
-						},
-					},
-				],
+				},
+				typeOptions: {
+					loadOptionsDependsOn: ["boardId", "statusColumnKey"],
+					loadOptionsMethod: "listStatusLabels",
+				},
 			},
 			{
 				displayName: "Skip (Pagination)",
@@ -260,8 +244,8 @@ export class FlowOfficeGetProjects implements INodeType {
 			"",
 		) as string
 		const name = this.getNodeParameter("optionalFilters.name", 0, "") as string
-		const statusColumnKey = this.getNodeParameter("statusFilter.statusColumnKey", 0, "") as string
-		const status_labels = this.getNodeParameter("statusFilter.status_labels", 0, []) as string[]
+		const statusColumnKey = this.getNodeParameter("statusColumnKey", 0, "") as string
+		const status_labels = this.getNodeParameter("status_labels", 0, []) as string[]
 		const skipRaw = this.getNodeParameter("skip", 0, 0)
 
 		const boardId = boardIdRaw ? z.coerce.number().int().parse(boardIdRaw) : undefined
