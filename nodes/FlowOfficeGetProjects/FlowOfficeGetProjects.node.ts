@@ -129,6 +129,11 @@ export class FlowOfficeGetProjects implements INodeType {
 				placeholder: "Add filters",
 				default: {},
 				hint: "These filters are optional. The API is paginated; the response may set 'hitLimit' to true when more results are available.",
+				displayOptions: {
+					hide: {
+						boardId: [""],
+					},
+				},
 				options: [
 					{
 						displayName: "Name Contains",
@@ -188,6 +193,11 @@ export class FlowOfficeGetProjects implements INodeType {
 				placeholder: "Add status filters",
 				default: {},
 				hint: "Filter by a single status column and choose multiple labels.",
+				displayOptions: {
+					hide: {
+						boardId: [""],
+					},
+				},
 				options: [
 					{
 						displayName: "Status Column Name or ID",
