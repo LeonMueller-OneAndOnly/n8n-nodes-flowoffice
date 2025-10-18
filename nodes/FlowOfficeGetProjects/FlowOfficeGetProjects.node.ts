@@ -116,9 +116,11 @@ export class FlowOfficeGetProjects implements INodeType {
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				default: "",
+				required: true,
 				typeOptions: {
 					loadOptionsMethod: "listBoards",
 				},
+				hint: "The cells of the projekte returned here can vary depending on the board. You can use the 'List columns of a board' node to get the columns of the board and see what is available.",
 			},
 			{
 				displayName: "Optional Filters",
