@@ -121,23 +121,6 @@ export class FlowOfficeGetProjects implements INodeType {
 				},
 			},
 			{
-				displayName: "Subboard Name or ID",
-				name: "subboardId",
-				type: "options",
-				description:
-					'Choose a subboard of the selected board. The list populates after selecting a board. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-				default: "",
-				displayOptions: {
-					hide: {
-						boardId: [""],
-					},
-				},
-				typeOptions: {
-					loadOptionsDependsOn: ["boardId"],
-					loadOptionsMethod: "listSubboards",
-				},
-			},
-			{
 				displayName: "Optional Filters",
 				name: "optionalFilters",
 				type: "collection",
@@ -145,18 +128,6 @@ export class FlowOfficeGetProjects implements INodeType {
 				default: {},
 				hint: "These filters are optional. The API is paginated; the response may set 'hitLimit' to true when more results are available.",
 				options: [
-					{
-						displayName: "From State Names or IDs",
-						name: "fromStates",
-						type: "multiOptions",
-						default: [],
-						description:
-							'Only projects currently in one of these states. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-						typeOptions: {
-							loadOptionsDependsOn: ["boardId", "optionalFilters.statusColumnKey"],
-							loadOptionsMethod: "listStatusLabels",
-						},
-					},
 					{
 						displayName: "Name Contains",
 						name: "name",
@@ -189,7 +160,19 @@ export class FlowOfficeGetProjects implements INodeType {
 							loadOptionsDependsOn: ["boardId"],
 							loadOptionsMethod: "listStatusColumns",
 						},
-						hint: "Choose a status column to use with the labels to filter for.",
+						hint: "Choose a status column to use with From/To states.",
+					},
+					{
+						displayName: "Subboard Name or ID",
+						name: "subboardId",
+						type: "options",
+						description:
+							'Choose a subboard of the selected board. The list populates after selecting a board. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+						default: "",
+						typeOptions: {
+							loadOptionsDependsOn: ["boardId"],
+							loadOptionsMethod: "listSubboards",
+						},
 					},
 					{
 						displayName: "Label Names or IDs",
@@ -218,7 +201,7 @@ export class FlowOfficeGetProjects implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const boardIdRaw = this.getNodeParameter("boardId", 0, "")
-		const subboardIdRaw = this.getNodeParameter("subboardId", 0, "")
+		const subboardIdRaw = this.getNodeParameter("optionalFilters.subboardId", 0, "")
 		const projectIdRaw = this.getNodeParameter("optionalFilters.projectId", 0, 0)
 		const projectUuid = this.getNodeParameter("optionalFilters.projectUuid", 0, "") as string
 		const name = this.getNodeParameter("optionalFilters.name", 0, "") as string
