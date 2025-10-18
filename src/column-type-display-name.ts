@@ -51,6 +51,7 @@ export function getColumnTypeDisplayName(
 		case "cloud":
 			return "Cloud"
 		default:
+			// eslint-disable-next-line no-case-declarations
 			const _never: never = columnType
 			return _never
 	}

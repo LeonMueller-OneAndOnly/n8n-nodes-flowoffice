@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export type UnaryFunction<Input, Output> = (value: Input) => Output
 
 // Overloads for up to 8 piped functions

@@ -9,8 +9,9 @@ import type {
 	ResourceMapperField,
 	ResourceMapperFields,
 	IDataObject,
+	JsonObject,
 } from "n8n-workflow"
-import { NodeConnectionTypes } from "n8n-workflow"
+import { NodeApiError, NodeConnectionTypes } from "n8n-workflow"
 
 import { invokeEndpoint } from "../../src/transport/invoke-api"
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
@@ -101,7 +102,6 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 						case "cloud":
 						case "kunde":
 						case "aufgaben":
-						case "cloud":
 						case "teamMember":
 							return null
 
@@ -109,12 +109,10 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 						case "formel":
 						case "dokument":
 						case "lager":
-						case "formel":
-						case "dokument":
-						case "lager":
 							return null
 
 						default:
+							// eslint-disable-next-line no-case-declarations
 							const _never: never = columnType
 							return _never
 					}
@@ -197,7 +195,7 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 
 				type: "options",
 				description:
-					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>. <br/>Each board has different columns. Provide a mapping for which input field should go to which column in your selected board.',
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>. Each board has different columns. Provide a mapping for which input field should go to which column in your selected board. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 
 				default: "",
 				required: true,
@@ -208,13 +206,12 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 			},
 
 			{
-				displayName: "Subboard",
+				displayName: "Subboard Name or ID",
 				name: "subboardId",
 				type: "options",
 				description:
-					"Choose a subboard of the selected board. The list populates after selecting a board.",
+					'Choose a subboard of the selected board. The list populates after selecting a board. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				default: "",
-				required: false,
 				displayOptions: {
 					hide: {
 						boardId: [""],
@@ -327,7 +324,7 @@ export class FlowOfficeCreateProjektResourceMapper implements INodeType {
 						})
 					}
 				} else {
-					throw new Error(String(uploadResult.error))
+					throw new NodeApiError(this.getNode(), uploadResult.error as JsonObject)
 				}
 			}
 		}
