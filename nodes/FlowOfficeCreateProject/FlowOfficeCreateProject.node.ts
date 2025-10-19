@@ -317,12 +317,14 @@ export class FlowOfficeCreateProject implements INodeType {
 						pairedItem: { item: inputRef.itemIndex },
 					})
 				}
-			} else {
+			}
+
+			if (!uploadResult.success) {
 				if (this.continueOnFail()) {
 					for (const inputRef of aChunk) {
 						outputItems.push({
 							json: { boardId, subboardId, mapped: inputRef.mapped },
-							error: undefined,
+							error: uploadResult.error as NodeApiError,
 							pairedItem: { item: inputRef.itemIndex },
 						})
 					}
