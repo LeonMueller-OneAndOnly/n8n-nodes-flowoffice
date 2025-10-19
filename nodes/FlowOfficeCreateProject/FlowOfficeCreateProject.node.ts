@@ -166,7 +166,7 @@ export class FlowOfficeCreateProject implements INodeType {
 		},
 	}
 	description: INodeTypeDescription = {
-		displayName: "Create Projekt (FlowOffice)",
+		displayName: "Create Project (FlowOffice)",
 		name: "flowOfficeCreateProject",
 		icon: {
 			light: "file:FlowOfficeCreateProject.svg",
