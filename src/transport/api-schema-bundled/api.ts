@@ -70,39 +70,32 @@ const ZListBoardsOutput = z.object({
 });
 
 const ZColumnType = z.enum([
-  //mandatory columns
-  "name",
-
-  // regular columns
-  "text",
-  "number",
-  "date",
-  "checkbox",
-  "interval",
-
-  "phone",
-  "email",
-  "address",
-
-  "rating-stars",
-  "erneut-kontaktieren",
-  "link",
-  "personName",
-
-  "zeitauswertung",
-
-  "formel",
-
-  // columns with options
-  "status",
-  "dokument",
-
-  // project special columns
-  "kunde",
-  "teamMember",
-  "aufgaben",
-  "cloud",
-  "lager",
+    //mandatory columns
+    "name",
+    // regular columns
+    "text",
+    "number",
+    "date",
+    "checkbox",
+    "interval",
+    "phone",
+    "email",
+    "address",
+    "rating-stars",
+    "erneut-kontaktieren",
+    "link",
+    "personName",
+    "zeitauswertung",
+    "formel",
+    // columns with options
+    "status",
+    "dokument",
+    // project special columns
+    "kunde",
+    "teamMember",
+    "aufgaben",
+    "cloud",
+    "lager",
 ]);
 
 const ZCreateProjectsInput = z.object({
@@ -115,6 +108,16 @@ const ZCreateProjectsOutput = z.object({
         .object({
         dbId: z.number().int(),
         uuid: z.string(),
+        name: z.string(),
+        cells: z.record(z.string(), z.object({
+            columnKey: z.string(),
+            columnLabel: z.string(),
+            columnType: ZColumnType$1,
+            cellValue: z.union([
+                z.object({ labelId: z.string(), labelValue: z.string() }),
+                z.unknown(),
+            ]),
+        })),
     })
         .array(),
 });
@@ -155,35 +158,33 @@ const ZGetProjectsOutput = z.object({
 });
 
 const n8nApi_v1 = {
-  endpoints: {
-    board: {
-      listBoards: {
-        method: "GET",
-        pathname: "/api/v1/board/list-boards",
-        inputSchema: z.null(),
-        outputSchema: ZListBoardsOutput,
-      },
+    endpoints: {
+        board: {
+            listBoards: {
+                method: "GET",
+                pathname: "/api/v1/board/list-boards",
+                inputSchema: z.null(),
+                outputSchema: ZListBoardsOutput,
+            },
+        },
+        project: {
+            createProjects: {
+                method: "POST",
+                pathname: "/api/v1/project/create-projects",
+                inputSchema: ZCreateProjectsInput,
+                outputSchema: ZCreateProjectsOutput,
+            },
+            getProjects: {
+                method: "POST",
+                pathname: "/api/v1/project/get-projects",
+                inputSchema: ZGetProjectsInput,
+                outputSchema: ZGetProjectsOutput,
+            },
+        },
     },
-
-    project: {
-      createProjects: {
-        method: "POST",
-        pathname: "/api/v1/project/create-projects",
-        inputSchema: ZCreateProjectsInput,
-        outputSchema: ZCreateProjectsOutput,
-      },
-
-      getProjects: {
-        method: "POST",
-        pathname: "/api/v1/project/get-projects",
-        inputSchema: ZGetProjectsInput,
-        outputSchema: ZGetProjectsOutput,
-      },
+    schemas: {
+        ZColumnType: ZColumnType,
     },
-  },
-  schemas: {
-    ZColumnType: ZColumnType,
-  },
 };
 
 export { n8nApi_v1 };
