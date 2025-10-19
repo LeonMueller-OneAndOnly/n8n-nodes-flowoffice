@@ -22,6 +22,8 @@ import {
 
 import z from "zod"
 
+const EmptyStatusColumnName = "(no status column selected)"
+
 export class FlowOfficeGetProjects implements INodeType {
 	methods = {
 		loadOptions: {
@@ -55,11 +57,12 @@ export class FlowOfficeGetProjects implements INodeType {
 				})
 				const boardId = Number(selectedBoardId)
 				return [
-					...buildOptions_columnsForBoard_statusOnly(boards, boardId),
 					{
-						name: "_Empty_",
-						value: "-",
+						name: EmptyStatusColumnName,
+						value: "No status column selected",
+						description: "No status column selected",
 					},
+					...buildOptions_columnsForBoard_statusOnly(boards, boardId),
 				]
 			},
 
@@ -197,7 +200,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				name: "statusColumnKey",
 				type: "options",
 				// eslint-disable-next-line n8n-nodes-base/node-param-default-wrong-for-options
-				default: "_Empty_",
+				default: EmptyStatusColumnName,
 				description:
 					'Select a status column to filter by, then choose its labels below. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 
@@ -224,7 +227,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				displayOptions: {
 					hide: {
 						boardId: [""],
-						statusColumnKey: ["", "_Empty_"],
+						statusColumnKey: ["", EmptyStatusColumnName],
 					},
 				},
 				typeOptions: {
@@ -258,7 +261,11 @@ export class FlowOfficeGetProjects implements INodeType {
 			"",
 		) as string
 
-		const statusColumnKey = this.getNodeParameter("statusColumnKey", 0, "") as string
+		const statusColumnKeyRaw = this.getNodeParameter("statusColumnKey", 0, "") as string
+		const statusColumnKey =
+			statusColumnKeyRaw === EmptyStatusColumnName || statusColumnKeyRaw === "-"
+				? ""
+				: statusColumnKeyRaw
 		const status_labels = this.getNodeParameter("status_labels", 0, []) as string[]
 		const skipRaw = this.getNodeParameter("skip", 0, 0)
 
