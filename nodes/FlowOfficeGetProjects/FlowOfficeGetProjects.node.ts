@@ -54,7 +54,13 @@ export class FlowOfficeGetProjects implements INodeType {
 					body: null,
 				})
 				const boardId = Number(selectedBoardId)
-				return buildOptions_columnsForBoard_statusOnly(boards, boardId)
+				return [
+					...buildOptions_columnsForBoard_statusOnly(boards, boardId),
+					{
+						name: "_Empty_",
+						value: "-",
+					},
+				]
 			},
 
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -120,85 +126,81 @@ export class FlowOfficeGetProjects implements INodeType {
 				},
 				hint: "The cells of the projekte returned here can vary depending on the board. You can use the 'List columns of a board' node to get the columns of the board and see what is available.",
 			},
+			// Subboard moved into optional filters below
+			// Optional filters collection for IDs/UUIDs and name
 			{
-				displayName: "Subboard Name or ID",
-				name: "subboardId",
-				type: "options",
-				description:
-					'Choose a subboard of the selected board. The list populates after selecting a board. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-				default: "",
+				displayName: "Optional Filters",
+				name: "optionalFilters",
+				type: "collection",
+				placeholder: "Add filters",
+				default: {},
 				displayOptions: {
 					hide: { boardId: [""] },
 				},
-				typeOptions: {
-					loadOptionsDependsOn: ["boardId"],
-					loadOptionsMethod: "listSubboards",
-				},
-			},
-			// Flattened optional filters
-			{
-				displayName: "Name Contains",
-				name: "name",
-				type: "string",
-				default: "",
-				placeholder: "e.g. Kundenprojekt",
-				displayOptions: {
-					hide: { boardId: [""] },
-				},
-				hint: "Optional filter by project name substring.",
-			},
-			{
-				displayName: "Project ID",
-				name: "projectId",
-				type: "number",
-				default: "",
-				placeholder: "e.g. 123",
-				displayOptions: {
-					hide: { boardId: [""] },
-				},
-				hint: "Optional. Single project ID.",
-			},
-			{
-				displayName: "Project IDs (CSV)",
-				name: "projectIdsCsv",
-				type: "string",
-				default: "",
-				placeholder: "e.g. 101,102,103",
-				displayOptions: {
-					hide: { boardId: [""] },
-				},
-				hint: "Optional. Comma-separated list of project IDs.",
-			},
-			{
-				displayName: "Project UUID",
-				name: "projectUuid",
-				type: "string",
-				default: "",
-				placeholder: "e.g. 550e8400-e29b-41d4-a716-446655440000",
-				displayOptions: {
-					hide: { boardId: [""] },
-				},
-				hint: "Optional. Single project UUID.",
-			},
-			{
-				displayName: "Project UUIDs (CSV)",
-				name: "projectUuidsCsv",
-				type: "string",
-				default: "",
-				placeholder: "e.g. uuid-1,uuid-2",
-				displayOptions: {
-					hide: { boardId: [""] },
-				},
-				hint: "Optional. Comma-separated list of project UUIDs.",
+				hint: "Optionally filter by name, IDs, UUIDs. You can mix single and CSV values.",
+				// eslint-disable-next-line n8n-nodes-base/node-param-collection-type-unsorted-items
+				options: [
+					{
+						displayName: "Subboard Name or ID",
+						name: "subboardId",
+						type: "options",
+						description:
+							'Choose a subboard of the selected board. The list populates after selecting a board. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+						default: "",
+						typeOptions: {
+							loadOptionsDependsOn: ["boardId"],
+							loadOptionsMethod: "listSubboards",
+						},
+					},
+					{
+						displayName: "Name Contains",
+						name: "name",
+						type: "string",
+						default: "",
+						placeholder: "e.g. Kundenprojekt",
+					},
+					{
+						displayName: "Project ID",
+						name: "projectId",
+						type: "number",
+						default: 0,
+						placeholder: "e.g. 123",
+					},
+					{
+						displayName: "Project IDs (CSV)",
+						name: "projectIdsCsv",
+						type: "string",
+						default: "",
+						placeholder: "e.g. 101,102,103",
+						hint: "Comma-separated list of project IDs.",
+					},
+					{
+						displayName: "Project UUID",
+						name: "projectUuid",
+						type: "string",
+						default: "",
+						placeholder: "e.g. 550e8400-e29b-41d4-a716-446655440000",
+					},
+					{
+						displayName: "Project UUIDs (CSV)",
+						name: "projectUuidsCsv",
+						type: "string",
+						default: "",
+						placeholder: "e.g. uuid-1,uuid-2",
+						hint: "Comma-separated list of project UUIDs.",
+					},
+				],
 			},
 
 			{
 				displayName: "Status Column Name or ID",
 				name: "statusColumnKey",
 				type: "options",
+				// eslint-disable-next-line n8n-nodes-base/node-param-default-wrong-for-options
+				default: "_Empty_",
 				description:
 					'Select a status column to filter by, then choose its labels below. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-				default: "",
+
 				displayOptions: {
 					hide: {
 						boardId: [""],
@@ -222,7 +224,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				displayOptions: {
 					hide: {
 						boardId: [""],
-						statusColumnKey: [""],
+						statusColumnKey: ["", "_Empty_"],
 					},
 				},
 				typeOptions: {
@@ -243,12 +245,19 @@ export class FlowOfficeGetProjects implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const boardIdRaw = this.getNodeParameter("boardId", 0, "")
-		const subboardIdRaw = this.getNodeParameter("subboardId", 0, "")
-		const projectIdRaw = this.getNodeParameter("projectId", 0, 0)
-		const projectIdsCsv = this.getNodeParameter("projectIdsCsv", 0, "") as string
-		const projectUuid = this.getNodeParameter("projectUuid", 0, "") as string
-		const projectUuidsCsv = this.getNodeParameter("projectUuidsCsv", 0, "") as string
-		const name = this.getNodeParameter("name", 0, "") as string
+
+		const subboardIdRaw = this.getNodeParameter("optionalFilters.subboardId", 0, "")
+
+		const name = this.getNodeParameter("optionalFilters.name", 0, "") as string
+		const projectIdRaw = this.getNodeParameter("optionalFilters.projectId", 0, 0)
+		const projectIdsCsv = this.getNodeParameter("optionalFilters.projectIdsCsv", 0, "") as string
+		const projectUuid = this.getNodeParameter("optionalFilters.projectUuid", 0, "") as string
+		const projectUuidsCsv = this.getNodeParameter(
+			"optionalFilters.projectUuidsCsv",
+			0,
+			"",
+		) as string
+
 		const statusColumnKey = this.getNodeParameter("statusColumnKey", 0, "") as string
 		const status_labels = this.getNodeParameter("status_labels", 0, []) as string[]
 		const skipRaw = this.getNodeParameter("skip", 0, 0)
