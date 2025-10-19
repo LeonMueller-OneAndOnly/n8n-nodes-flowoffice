@@ -297,6 +297,7 @@ export class FlowOfficeCreateProject implements INodeType {
 		for (const aChunk of chunk(mappedPerItem, 30)) {
 			const uploadResult = await tryTo_async(async () =>
 				invokeEndpoint(n8nApi_v1.endpoints.project.createProjects, {
+					displayOutput_whenZodParsingFails: true,
 					thisArg: this,
 					body: {
 						projects_mappedcolumnKey_toValue: aChunk.map((x) => x.mapped),

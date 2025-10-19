@@ -322,6 +322,7 @@ export class FlowOfficeGetProjects implements INodeType {
 
 		const apiResult = await tryTo_async(() =>
 			invokeEndpoint(n8nApi_v1.endpoints.project.getProjects, {
+				displayOutput_whenZodParsingFails: true,
 				thisArg: this,
 				body,
 			}),
