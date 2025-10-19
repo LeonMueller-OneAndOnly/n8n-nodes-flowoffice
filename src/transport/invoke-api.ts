@@ -13,6 +13,8 @@ export async function invokeEndpoint<S_input extends z.Schema, S_output extends 
 	input: {
 		thisArg: ILoadOptionsFunctions | IExecuteFunctions
 		body: z.input<S_input>
+
+		displayOutput_whenZodParsingFails?: boolean
 	},
 ): Promise<z.output<S_output>> {
 	const { baseUrl } = await getCredentials_fromOptionsLoader(input.thisArg)
@@ -28,5 +30,15 @@ export async function invokeEndpoint<S_input extends z.Schema, S_output extends 
 		},
 	)
 
-	return apiSchema.outputSchema.parse(response)
+	const parseResult = apiSchema.outputSchema.safeParse(response)
+
+	if (parseResult.success) {
+		return parseResult.data
+	}
+
+	if (input.displayOutput_whenZodParsingFails) {
+		return response
+	}
+
+	throw parseResult.error
 }
