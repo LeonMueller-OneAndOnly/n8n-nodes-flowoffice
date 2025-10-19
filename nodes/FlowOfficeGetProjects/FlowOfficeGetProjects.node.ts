@@ -210,6 +210,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				options: [],
 				description:
 					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				hint: "Specify labels by display name or label UUID. Multiple labels are supported. The filter is only applied when at least one label is specified.",
 				displayOptions: {
 					hide: {
 						boardId: [""],
