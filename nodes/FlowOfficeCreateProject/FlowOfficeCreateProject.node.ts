@@ -313,7 +313,7 @@ export class FlowOfficeCreateProject implements INodeType {
 					const inputRef = aChunk[i]!
 					const createdOut = created[i]
 					outputItems.push({
-						json: { boardId, subboardId, mapped: inputRef.mapped, created: createdOut },
+						json: { boardId, subboardId, project: createdOut },
 						pairedItem: { item: inputRef.itemIndex },
 					})
 				}
