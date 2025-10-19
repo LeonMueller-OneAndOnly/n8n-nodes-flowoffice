@@ -6,6 +6,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 	IDataObject,
+	JsonObject,
 } from "n8n-workflow"
 import { NodeApiError, NodeConnectionTypes } from "n8n-workflow"
 
@@ -21,8 +22,14 @@ import {
 } from "../../src/build-options/buildBoardOptions"
 
 import z from "zod"
+import { tryTo_async } from "../../src/utils/try"
 
 const EmptyStatusColumnName = "(no status column selected)"
+const NoStatusColumnSelectedOption: INodePropertyOptions = {
+	name: EmptyStatusColumnName,
+	value: EmptyStatusColumnName,
+	description: "No status column selected",
+}
 
 export class FlowOfficeGetProjects implements INodeType {
 	methods = {
@@ -49,7 +56,8 @@ export class FlowOfficeGetProjects implements INodeType {
 
 			async listStatusColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				if (!selectedBoardId) return []
+
+				if (!selectedBoardId) return [NoStatusColumnSelectedOption]
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
 					thisArg: this,
@@ -57,11 +65,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				})
 				const boardId = Number(selectedBoardId)
 				return [
-					{
-						name: EmptyStatusColumnName,
-						value: "No status column selected",
-						description: "No status column selected",
-					},
+					NoStatusColumnSelectedOption,
 					...buildOptions_columnsForBoard_statusOnly(boards, boardId),
 				]
 			},
@@ -261,11 +265,19 @@ export class FlowOfficeGetProjects implements INodeType {
 			"",
 		) as string
 
-		const statusColumnKeyRaw = this.getNodeParameter("statusColumnKey", 0, "") as string
-		const statusColumnKey =
-			statusColumnKeyRaw === EmptyStatusColumnName || statusColumnKeyRaw === "-"
-				? ""
-				: statusColumnKeyRaw
+		const statusColumnKey = (() => {
+			const statusColumnKeyRaw = this.getNodeParameter("statusColumnKey", 0, "") as string
+
+			if (
+				!statusColumnKeyRaw ||
+				statusColumnKeyRaw === EmptyStatusColumnName ||
+				statusColumnKeyRaw === "-"
+			) {
+				return ""
+			}
+			return statusColumnKeyRaw
+		})()
+
 		const status_labels = this.getNodeParameter("status_labels", 0, []) as string[]
 		const skipRaw = this.getNodeParameter("skip", 0, 0)
 
@@ -273,61 +285,56 @@ export class FlowOfficeGetProjects implements INodeType {
 		const subBoardId = subboardIdRaw ? z.coerce.number().int().parse(subboardIdRaw) : undefined
 		const projectId = projectIdRaw ? z.coerce.number().int().parse(projectIdRaw) : undefined
 
-		const body: z.infer<typeof n8nApi_v1.endpoints.project.getProjects.inputSchema> = {}
+		const body: z.infer<typeof n8nApi_v1.endpoints.project.getProjects.inputSchema> = {
+			boardId,
+			subBoardId,
 
-		if (boardId !== undefined) body.boardId = boardId
-		if (subBoardId !== undefined) body.subBoardId = subBoardId
-		// projektId: number | number[] from single + CSV
-		{
-			const idsFromCsv = (projectIdsCsv || "")
-				.split(",")
-				.map((s) => s.trim())
-				.filter((s) => s.length > 0)
-				.map((s) => Number(s))
-				.filter((n) => Number.isFinite(n) && Number.isInteger(n))
-			const uniqueIds = Array.from(
-				new Set([...(idsFromCsv || []), ...(projectId !== undefined ? [projectId] : [])]),
-			) as number[]
-			if (uniqueIds.length === 1) body.projektId = uniqueIds[0]
-			else if (uniqueIds.length > 1) body.projektId = uniqueIds
+			name: name,
+
+			projektId: (() => {
+				if (!projectId && !projectIdsCsv) return undefined
+				const ids = new Array<string>()
+				if (projectId) ids.push(projectId.toString())
+				if (projectIdsCsv) ids.push(...projectIdsCsv.split(","))
+				return ids.map((id) => Number(id))
+			})(),
+
+			projektUuid: (() => {
+				if (!projectUuid && !projectUuidsCsv) return undefined
+				const uuids = new Array<string>()
+				if (projectUuid) uuids.push(projectUuid)
+				if (projectUuidsCsv) uuids.push(...projectUuidsCsv.split(","))
+				return uuids
+			})(),
+
+			skip: skipRaw ? z.coerce.number().int().min(0).parse(skipRaw) : undefined,
+
+			status: (() => {
+				if (!statusColumnKey) return
+				if (!status_labels || status_labels.length === 0) return
+
+				return {
+					statusColumnKey,
+					filterLabels_keyOrName: status_labels,
+				}
+			})(),
 		}
 
-		// projektUuid: string | string[] from single + CSV
-		{
-			const uuidsFromCsv = (projectUuidsCsv || "")
-				.split(",")
-				.map((s) => s.trim())
-				.filter((s) => s.length > 0)
-			const allUuids = [...uuidsFromCsv, ...(projectUuid ? [projectUuid] : [])]
-			const uniqueUuids = Array.from(new Set(allUuids))
-			if (uniqueUuids.length === 1) body.projektUuid = uniqueUuids[0]
-			else if (uniqueUuids.length > 1) body.projektUuid = uniqueUuids
-		}
-		if (name) body.name = name
-		const skip = skipRaw ? z.coerce.number().int().min(0).parse(skipRaw) : undefined
-		if (skip !== undefined) body.skip = skip
-
-		if (statusColumnKey) {
-			body.status = {
-				statusColumnKey: statusColumnKey,
-				filterLabels_keyOrName: Array.isArray(status_labels) ? status_labels : [],
-			}
-		}
-
-		try {
-			// Use real endpoint: n8nApi_v1.endpoints.project.getProjects
-			const response = await invokeEndpoint(n8nApi_v1.endpoints.project.getProjects, {
+		const apiResult = await tryTo_async(() =>
+			invokeEndpoint(n8nApi_v1.endpoints.project.getProjects, {
 				thisArg: this,
 				body,
-			})
+			}),
+		)
 
-			const outItem: INodeExecutionData = { json: response as unknown as IDataObject }
-			return [[outItem]]
-		} catch (error) {
+		if (!apiResult.success) {
 			if (this.continueOnFail()) {
-				return [[{ json: { error: (error as Error).message, filters: body } }]]
+				return [[{ json: { error: (apiResult.error as Error).message, filters: body } }]]
 			}
-			throw new NodeApiError(this.getNode(), error)
+			throw new NodeApiError(this.getNode(), apiResult.error as JsonObject)
 		}
+
+		const outItem: INodeExecutionData = { json: apiResult.data as IDataObject }
+		return [[outItem]]
 	}
 }
