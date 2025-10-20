@@ -145,11 +145,11 @@ export class FlowOfficeCreateProject implements INodeType {
 								}))
 							}
 
-							if (type === "options") {
-								this.logger.error(
-									`Column type ${aCol.columnType} uses the 'options' field type, but does not list any options to choose from`,
-								)
-							}
+							// if (type === "options") {
+							// 	this.logger.error(
+							// 		`Column type ${aCol.columnType} uses the 'options' field type, but does not list any options to choose from`,
+							// 	)
+							// }
 
 							return undefined
 						})(),
