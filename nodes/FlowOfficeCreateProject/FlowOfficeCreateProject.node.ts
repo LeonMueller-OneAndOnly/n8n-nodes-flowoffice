@@ -125,7 +125,7 @@ export class FlowOfficeCreateProject implements INodeType {
 
 					const type = mapColumnTypeToFieldType(aCol.columnType)
 
-					const aField: ResourceMapperField = {
+					fields.push({
 						id: aCol.columnKey,
 						displayName: `${aCol.label} (${getColumnTypeDisplayName(aCol.columnType)})`,
 						defaultMatch: aCol.columnType === "name",
@@ -153,9 +153,7 @@ export class FlowOfficeCreateProject implements INodeType {
 
 							return undefined
 						})(),
-					}
-
-					fields.push(aField)
+					})
 				}
 
 				return {
