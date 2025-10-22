@@ -28,10 +28,10 @@ const EmptyStatusColumnName = "(no status column selected)"
 export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 	description: INodeTypeDescription = {
 		version: 1,
-		name: "flowOfficeTriggerOnStatusChange",
+		name: "flowOfficeTriggerOnProjectStatusChange",
 		icon: {
-			light: "file:FlowOfficeTriggerOnStatusChange.svg",
-			dark: "file:FlowOfficeTriggerOnStatusChange.dark.svg",
+			light: "file:FlowOfficeTriggerOnProjectStatusChange.svg",
+			dark: "file:FlowOfficeTriggerOnProjectStatusChange.dark.svg",
 		},
 		group: ["trigger"],
 		displayName: "Trigger on Project Status Change (FlowOffice)",
