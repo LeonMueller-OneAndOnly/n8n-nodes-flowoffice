@@ -411,11 +411,14 @@ function buildConfigHash(input: {
 		fromStatusLabels: sortedFrom,
 		toStatusLabels: sortedTo,
 	})
-	let hash = 0
-	for (let i = 0; i < payload.length; i++) {
-		hash = (hash * 31 + payload.charCodeAt(i)) >>> 0
-	}
-	return String(hash)
+	// Base64url encode to ensure length and portability; satisfies min(16)
+	// Use global btoa/polyfill to avoid Node typings; works in Node runtime
+	const b64 = (
+		typeof Buffer !== "undefined"
+			? (Buffer as any).from(payload, "utf8").toString("base64")
+			: (globalThis as any).btoa(unescape(encodeURIComponent(payload)))
+	) as string
+	return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
 }
 
 function generateClientSubscriptionId(input: { this: IHookFunctions }): string {
