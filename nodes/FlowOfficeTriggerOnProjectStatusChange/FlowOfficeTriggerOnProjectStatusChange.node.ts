@@ -172,13 +172,31 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					staticData.subscriptionId === undefined ||
 					staticData.clientSubscriptionId === undefined
 				) {
+					this.logger.info("Static data is missing, creating new webhook")
 					return false
 				}
 
 				if (staticData.configHash !== currentConfigHash) {
+					this.logger.info("Webhook config hash mismatch, creating new webhook")
 					return false
 				}
 
+				const apiResult_check = await tryTo_async(async () =>
+					invokeEndpoint(n8nApi_v1.webhooks.projectStatusChanged.get, {
+						thisArg: this,
+						body: null,
+						displayOutput_whenZodParsingFails: true,
+					}),
+				)
+
+				if (!apiResult_check.success) {
+					this.logger.error(`Failed to check webhook: ${apiResult_check.error}`)
+					return false
+				}
+
+				this.logger.info(
+					"Webhook config hash matches & was returned from api, using existing webhook",
+				)
 				return true
 			},
 			async create(this: IHookFunctions): Promise<boolean> {
