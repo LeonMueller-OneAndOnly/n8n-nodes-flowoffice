@@ -97,27 +97,39 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 		},
 	}
 	description: INodeTypeDescription = {
-		displayName: "Trigger on Project Status Change (FlowOffice)",
+		version: 1,
 		name: "flowOfficeTriggerOnStatusChange",
 		icon: {
 			light: "file:FlowOfficeTriggerOnStatusChange.svg",
 			dark: "file:FlowOfficeTriggerOnStatusChange.dark.svg",
 		},
-		group: ["input"],
-		version: 1,
+		group: ["trigger"],
+		displayName: "Trigger on Project Status Change (FlowOffice)",
 		description: "Trigger on project status change event",
+		subtitle: undefined, // "={{$parameter.boardId}}",
 		defaults: {
 			name: "Trigger on Project Status Change (FlowOffice)",
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
-		usableAsTool: true,
+		usableAsTool: undefined,
 		credentials: [
 			{
 				name: "flowOfficeApi",
 				required: true,
 			},
 		],
+		webhooks: [
+			{
+				name: "default",
+				httpMethod: "POST",
+				responseMode: "onReceived",
+				path: "webhook",
+			},
+		],
+
+		// ------------------------------
+
 		properties: [
 			{
 				displayName: "Board Name or ID",

@@ -32,7 +32,8 @@ export class FlowOfficeListBoardColumns implements INodeType {
 			light: "file:FlowOfficeListBoardColumns.svg",
 			dark: "file:FlowOfficeListBoardColumns.dark.svg",
 		},
-		group: ["input"],
+		group: ["output"],
+		subtitle: undefined, // "={{$parameter.boardId}}",
 		version: 1,
 		description: "Select a board and output all its columns (including status labels)",
 		defaults: {
