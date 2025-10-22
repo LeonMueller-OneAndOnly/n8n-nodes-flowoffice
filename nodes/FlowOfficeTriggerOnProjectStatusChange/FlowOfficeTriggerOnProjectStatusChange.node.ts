@@ -260,22 +260,26 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					return true
 				}
 
-				try {
-					const deleteSchema = {
-						...n8nApi_v1.webhooks.projectStatusChanged.delete,
-						pathname: n8nApi_v1.webhooks.projectStatusChanged.delete.pathname.replace(
-							"[subscriptionId]",
-							encodeURIComponent(saved.clientSubscriptionId),
-						),
-					}
-					await invokeEndpoint(deleteSchema, {
+				const deleteSchema = {
+					...n8nApi_v1.webhooks.projectStatusChanged.delete,
+					pathname: n8nApi_v1.webhooks.projectStatusChanged.delete.pathname.replace(
+						"[subscriptionId]",
+						encodeURIComponent(saved.clientSubscriptionId),
+					),
+				}
+
+				const deleteResult = await tryTo_async(async () =>
+					invokeEndpoint(deleteSchema, {
 						thisArg: this,
 						body: null,
-					})
-				} catch (error) {
-					this.logger.error(`Failed to delete webhook: ${error}`)
-					// Treat 404 as success (idempotent delete). Actual error handling will depend on invokeEndpoint behavior.
+					}),
+				)
+
+				if (!deleteResult.success) {
+					this.logger.error(`Failed to delete webhook: ${deleteResult.error}`)
+					return false
 				}
+
 				return true
 			},
 		},
