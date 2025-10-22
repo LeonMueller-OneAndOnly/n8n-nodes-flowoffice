@@ -1,15 +1,14 @@
 import type {
-	IExecuteFunctions,
 	ILoadOptionsFunctions,
-	INodeExecutionData,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	IDataObject,
-	JsonObject,
 	IHookFunctions,
+	IWebhookFunctions,
+	IWebhookResponseData,
 } from "n8n-workflow"
-import { NodeApiError, NodeConnectionTypes } from "n8n-workflow"
+import { NodeConnectionTypes, NodeOperationError } from "n8n-workflow"
 
 import { invokeEndpoint } from "../../src/transport/invoke-api"
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
@@ -22,8 +21,8 @@ import {
 	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
 
-import z from "zod"
 import { tryTo_async } from "../../src/utils/try"
+import z from "zod"
 
 const EmptyStatusColumnName = "(no status column selected)"
 const NoStatusColumnSelectedOption: INodePropertyOptions = {
@@ -32,72 +31,7 @@ const NoStatusColumnSelectedOption: INodePropertyOptions = {
 	description: "No status column selected",
 }
 
-export class FlowOfficeTriggerOnStatusChange implements INodeType {
-	methods = {
-		loadOptions: {
-			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				return invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
-				}).then(buildOptions_boardId)
-			},
-
-			async listSubboards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				if (!selectedBoardId) return []
-
-				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
-				})
-
-				const boardId = Number(selectedBoardId)
-				return buildOptions_subboardId({ boards, boardId })
-			},
-
-			async listStatusColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-
-				if (!selectedBoardId) return [NoStatusColumnSelectedOption]
-
-				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
-				})
-				const boardId = Number(selectedBoardId)
-				return [
-					NoStatusColumnSelectedOption,
-					...buildOptions_columnsForBoard_statusOnly(boards, boardId),
-				]
-			},
-
-			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const selectedBoardId = this.getCurrentNodeParameter("boardId")
-				const statusColumnKey = this.getCurrentNodeParameter("statusColumnKey") as string
-				if (!selectedBoardId || !statusColumnKey) return []
-
-				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-					thisArg: this,
-					body: null,
-				})
-				const boardId = Number(selectedBoardId)
-				const board = getBoardById({ boards, boardId })
-				if (!board) return []
-
-				const statusCol = board.columnSchema.find((c) => c.columnKey === statusColumnKey)
-				if (!statusCol || statusCol.columnType !== "status") return []
-
-				const { labels } = helper.parseStatus_columnJson({
-					columnJSON: statusCol.columnJSON ?? "",
-				})
-				return labels.map((l: { label: string; enumKey: string }) => ({
-					name: l.label,
-					value: l.enumKey,
-				}))
-			},
-		},
-	}
-
+export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 	description: INodeTypeDescription = {
 		version: 1,
 		name: "flowOfficeTriggerOnStatusChange",
@@ -168,18 +102,19 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 					loadOptionsDependsOn: ["boardId"],
 					loadOptionsMethod: "listStatusColumns",
 				},
-				hint: "Pick one status column first, then select multiple labels below.",
+				hint: "Select the status column to watch. The FROM/TO label filters below are optional — leave them empty to match ANY.",
 			},
 
 			{
-				displayName: "Status Label Names or IDs",
+				displayName: "When FROM Status Is In",
 				name: "fromStatusLabels",
 				type: "multiOptions",
 				default: [],
 				options: [],
 				description:
 					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				hint: "Specify labels by display name or label UUID. Multiple labels are supported. The filter is only applied when at least one label is specified.",
+				placeholder: "Leave empty for ANY from-status",
+				hint: "Optional. Trigger when the previous (FROM) status matches any selected label. Leave empty to match ANY from-status. The node triggers if either FROM or TO filters match.",
 				displayOptions: {
 					hide: {
 						boardId: [""],
@@ -193,14 +128,15 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 			},
 
 			{
-				displayName: "Status Label Names or IDs",
+				displayName: "When TO Status Is In",
 				name: "toStatusLabels",
 				type: "multiOptions",
 				default: [],
 				options: [],
 				description:
 					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				hint: "Specify labels by display name or label UUID. Multiple labels are supported. The filter is only applied when at least one label is specified.",
+				placeholder: "Leave empty for ANY to-status",
+				hint: "Optional. Trigger when the new (TO) status matches any selected label. Leave empty to match ANY to-status. The node triggers if either FROM or TO filters match.",
 				displayOptions: {
 					hide: {
 						boardId: [""],
@@ -223,20 +159,20 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 				if (webhookData.webhookId === undefined) {
 					return false
 				}
-				try {
-					await baserowApiRequest.call(
-						this,
-						"GET",
-						`/api/database/webhooks/${webhookData.webhookId}/`,
-					)
-				} catch (error) {
-					if (error.response.status === 404) {
-						delete webhookData.webhookId
-						delete webhookData.webhookEvents
-						return false
-					}
-					throw error
-				}
+				// try {
+				// 	await baserowApiRequest.call(
+				// 		this,
+				// 		"GET",
+				// 		`/api/database/webhooks/${webhookData.webhookId}/`,
+				// 	)
+				// } catch (error) {
+				// 	if (error.response.status === 404) {
+				// 		delete webhookData.webhookId
+				// 		delete webhookData.webhookEvents
+				// 		return false
+				// 	}
+				// 	throw error
+				// }
 				return true
 			},
 			async create(this: IHookFunctions): Promise<boolean> {
@@ -249,36 +185,32 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 					)
 				}
 
-				const tableId = this.getNodeParameter("tableId") as string
-				const events = this.getNodeParameter("events", [])
-				const endpoint = `/api/database/webhooks/table/${tableId}/`
+				const boardId = this.getNodeParameter("boardId") as string
 
-				const body = {
-					url: webhookUrl,
-					include_all_events: false,
-					events,
-					request_method: "POST",
-					name: `${this.getWorkflow().name}`,
-					use_user_field_names: true,
-				}
+				// const body = {
+				// 	url: webhookUrl,
+				// 	include_all_events: false,
+				// 	events,
+				// 	request_method: "POST",
+				// 	name: `${this.getWorkflow().name}`,
+				// 	use_user_field_names: true,
+				// }
 
-				const webhookData = this.getWorkflowStaticData("node")
+				// const webhookData = this.getWorkflowStaticData("node")
 
-				let responseData
-				try {
-					responseData = await baserowApiRequest.call(this, "POST", endpoint, body)
-				} catch (error) {
-					throw error
-				}
+				// const apiResponse = await invokeEndpoint(n8nApi_v1.endpoints.webhook.create, {
+				// 	thisArg: this,
+				// 	body,
+				// })
 
-				if (responseData.id === undefined || responseData.active !== true) {
-					throw new NodeApiError(this.getNode(), responseData, {
-						message: "Baserow webhook creation response did not contain the expected data.",
-					})
-				}
+				// if (responseData.id === undefined || responseData.active !== true) {
+				// 	throw new NodeApiError(this.getNode(), responseData, {
+				// 		message: "Baserow webhook creation response did not contain the expected data.",
+				// 	})
+				// }
 
-				webhookData.webhookId = responseData.id as string
-				webhookData.webhookEvents = responseData.events as string[]
+				// webhookData.webhookId = responseData.id as string
+				// webhookData.webhookEvents = responseData.events as string[]
 
 				return true
 			},
@@ -286,19 +218,19 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 			async delete(this: IHookFunctions): Promise<boolean> {
 				const webhookData = this.getWorkflowStaticData("node")
 
-				if (webhookData.webhookId !== undefined) {
-					const endpoint = `/api/database/webhooks/${webhookData.webhookId}/`
-					const body = {}
-					try {
-						await baserowApiRequest.call(this, "DELETE", endpoint, body)
-					} catch (error) {
-						if (error.response.status !== 404) {
-							return false
-						}
-					}
-					delete webhookData.webhookId
-					delete webhookData.webhookEvents
-				}
+				// if (webhookData.webhookId !== undefined) {
+				// 	const endpoint = `/api/database/webhooks/${webhookData.webhookId}/`
+				// 	const body = {}
+				// 	try {
+				// 		await baserowApiRequest.call(this, "DELETE", endpoint, body)
+				// 	} catch (error) {
+				// 		if (error.response.status !== 404) {
+				// 			return false
+				// 		}
+				// 	}
+				// 	delete webhookData.webhookId
+				// 	delete webhookData.webhookEvents
+				// }
 				return true
 			},
 		},
@@ -322,4 +254,99 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 			workflowData: [this.helpers.returnJsonArray(bodyData)],
 		}
 	}
+
+	methods = {
+		loadOptions: {
+			async listBoards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				}).then(buildOptions_boardId)
+			},
+
+			async listSubboards(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter("boardId")
+				if (!selectedBoardId) return []
+
+				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
+
+				const boardId = Number(selectedBoardId)
+				return buildOptions_subboardId({ boards, boardId })
+			},
+
+			async listStatusColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter("boardId")
+
+				if (!selectedBoardId) return [NoStatusColumnSelectedOption]
+
+				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
+				const boardId = Number(selectedBoardId)
+				return [
+					NoStatusColumnSelectedOption,
+					...buildOptions_columnsForBoard_statusOnly(boards, boardId),
+				]
+			},
+
+			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter("boardId")
+				const statusColumnKey = this.getCurrentNodeParameter("statusColumnKey") as string
+				if (!selectedBoardId || !statusColumnKey) return []
+
+				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
+				const boardId = Number(selectedBoardId)
+				const board = getBoardById({ boards, boardId })
+				if (!board) return []
+
+				const statusCol = board.columnSchema.find((c) => c.columnKey === statusColumnKey)
+				if (!statusCol || statusCol.columnType !== "status") return []
+
+				const { labels } = helper.parseStatus_columnJson({
+					columnJSON: statusCol.columnJSON ?? "",
+				})
+				return labels.map((l: { label: string; enumKey: string }) => ({
+					name: l.label,
+					value: l.enumKey,
+				}))
+			},
+		},
+	}
+}
+
+const ZWebhookData = z.object({
+	webhookId: z.number(),
+	// TODO: filter options etc.
+})
+
+type TWebhookData = z.infer<typeof ZWebhookData>
+
+function setWebhookData_inWorkflowStaticData(input: {
+	this: IHookFunctions
+	webhookData: TWebhookData
+}) {
+	const webhookData = input.this.getWorkflowStaticData("node")
+
+	for (const key in input.webhookData) {
+		webhookData[key] = input.webhookData[key as keyof typeof input.webhookData]
+	}
+}
+
+function getWebhookData_fromWorkflowStaticData(input: {
+	this: IHookFunctions
+}): TWebhookData | null {
+	const webhookData = input.this.getWorkflowStaticData("node")
+
+	const parseResult = ZWebhookData.safeParse(webhookData)
+	if (!parseResult.success) {
+		return null
+	}
+	return parseResult.data
 }
