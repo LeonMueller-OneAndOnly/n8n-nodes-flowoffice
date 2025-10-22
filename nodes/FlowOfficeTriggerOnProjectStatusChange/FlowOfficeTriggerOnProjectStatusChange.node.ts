@@ -218,7 +218,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					),
 				}
 				const apiResponse = await invokeEndpoint(upsertSchema, {
-					thisArg: this as unknown as ILoadOptionsFunctions,
+					thisArg: this,
 					body: upsertBody,
 				})
 
@@ -253,7 +253,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 						),
 					}
 					await invokeEndpoint(deleteSchema, {
-						thisArg: this as unknown as ILoadOptionsFunctions,
+						thisArg: this,
 						body: null,
 					})
 				} catch {
