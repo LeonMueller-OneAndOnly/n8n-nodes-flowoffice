@@ -22,6 +22,7 @@ import {
 } from "../../src/build-options/buildBoardOptions"
 
 import z from "zod"
+import { tryTo_async } from "../../src/utils/try"
 
 const EmptyStatusColumnName = "(no status column selected)"
 
@@ -176,6 +177,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					return false
 				}
 
+				this.logger.info(`Webhook ${staticData.subscriptionId} is still valid`)
+
 				return true
 			},
 			async create(this: IHookFunctions): Promise<boolean> {
@@ -217,12 +220,19 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 						encodeURIComponent(clientSubscriptionId),
 					),
 				}
-				const apiResponse = await invokeEndpoint(upsertSchema, {
-					thisArg: this,
-					body: upsertBody,
-				})
+				const apiResponse = await tryTo_async(async () =>
+					invokeEndpoint(upsertSchema, {
+						thisArg: this,
+						body: upsertBody,
+					}),
+				)
 
-				const subscriptionId = apiResponse?.id as string
+				if (!apiResponse.success) {
+					this.logger.error(`Failed to upsert webhook: ${apiResponse.error}`)
+					return false
+				}
+
+				const subscriptionId = apiResponse.data.id
 				const effectiveSigningSecret = signingSecret
 
 				setWebhookData_inWorkflowStaticData({
@@ -256,7 +266,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 						thisArg: this,
 						body: null,
 					})
-				} catch {
+				} catch (error) {
+					this.logger.error(`Failed to delete webhook: ${error}`)
 					// Treat 404 as success (idempotent delete). Actual error handling will depend on invokeEndpoint behavior.
 				}
 				return true
