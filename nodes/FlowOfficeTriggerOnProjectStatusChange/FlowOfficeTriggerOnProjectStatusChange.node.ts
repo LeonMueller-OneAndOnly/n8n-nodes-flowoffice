@@ -149,6 +149,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 	webhookMethods = {
 		default: {
 			async checkExists(this: IHookFunctions): Promise<boolean> {
+				this.logger.info("Checking if webhook exists")
+
 				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
 
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
@@ -182,6 +184,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				return true
 			},
 			async create(this: IHookFunctions): Promise<boolean> {
+				this.logger.info("Creating webhook")
+
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
 
 				const boardId = this.getNodeParameter("boardId") as string
@@ -249,6 +253,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 			},
 
 			async delete(this: IHookFunctions): Promise<boolean> {
+				this.logger.info("Deleting webhook")
+
 				const saved = getWebhookData_fromWorkflowStaticData({ this: this })
 				if (!saved) {
 					return true
