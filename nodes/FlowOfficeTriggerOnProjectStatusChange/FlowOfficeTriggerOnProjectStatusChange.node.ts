@@ -181,8 +181,15 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					return false
 				}
 
+				const getSchema = {
+					...n8nApi_v1.webhooks.projectStatusChanged.get,
+					pathname: n8nApi_v1.webhooks.projectStatusChanged.get.pathname.replace(
+						"[subscriptionId]",
+						encodeURIComponent(staticData.clientSubscriptionId as string),
+					),
+				}
 				const apiResult_check = await tryTo_async(async () =>
-					invokeEndpoint(n8nApi_v1.webhooks.projectStatusChanged.get, {
+					invokeEndpoint(getSchema, {
 						thisArg: this,
 						body: null,
 						displayOutput_whenZodParsingFails: true,
@@ -190,7 +197,12 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				)
 
 				if (!apiResult_check.success) {
-					this.logger.error(`Failed to check webhook: ${apiResult_check.error}`)
+					this.logger.error(`Webhook check failed: ${apiResult_check.error}`)
+					return false
+				}
+
+				if (!apiResult_check.data.active) {
+					this.logger.info("Webhook found but inactive, creating/upserting webhook")
 					return false
 				}
 
