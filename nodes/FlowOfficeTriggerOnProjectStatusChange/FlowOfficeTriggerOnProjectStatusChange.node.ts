@@ -179,8 +179,6 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					return false
 				}
 
-				this.logger.info(`Webhook ${staticData.subscriptionId} is still valid`)
-
 				return true
 			},
 			async create(this: IHookFunctions): Promise<boolean> {
@@ -417,10 +415,67 @@ function buildConfigHash(input: {
 		toStatusLabels: sortedTo,
 	})
 	// Base64url encode to ensure length and portability; satisfies min(16)
-	// Use global btoa/polyfill to avoid Node typings; works in Node runtime
-	const b64 = globalThis.btoa(unescape(encodeURIComponent(payload))) as string
+	const b64url = base64UrlEncode(payload)
+	return b64url
+}
 
-	return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
+function base64UrlEncode(input: string): string {
+	const bytes = utf8Encode(input)
+	let output = ""
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+	let i = 0
+	for (; i + 2 < bytes.length; i += 3) {
+		const a = bytes[i] as number
+		const b = bytes[i + 1] as number
+		const c = bytes[i + 2] as number
+		const triple = (a << 16) | (b << 8) | c
+		output +=
+			alphabet.charAt((triple >> 18) & 63) +
+			alphabet.charAt((triple >> 12) & 63) +
+			alphabet.charAt((triple >> 6) & 63) +
+			alphabet.charAt(triple & 63)
+	}
+
+	if (i < bytes.length) {
+		const remaining = bytes.length - i
+		const a = bytes[i] as number
+		const b = remaining === 2 ? (bytes[i + 1] as number) : 0
+		const triple = (a << 16) | (b << 8)
+		output += alphabet.charAt((triple >> 18) & 63)
+		output += alphabet.charAt((triple >> 12) & 63)
+		output += remaining === 2 ? alphabet.charAt((triple >> 6) & 63) : "="
+		output += "="
+	}
+
+	return output.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
+}
+
+function utf8Encode(input: string): number[] {
+	const bytes: number[] = []
+	for (let i = 0; i < input.length; i++) {
+		const codePoint = input.codePointAt(i) as number
+		if (codePoint > 0xffff) i++
+		if (codePoint <= 0x7f) {
+			bytes.push(codePoint)
+		} else if (codePoint <= 0x7ff) {
+			bytes.push(0xc0 | (codePoint >> 6), 0x80 | (codePoint & 0x3f))
+		} else if (codePoint <= 0xffff) {
+			bytes.push(
+				0xe0 | (codePoint >> 12),
+				0x80 | ((codePoint >> 6) & 0x3f),
+				0x80 | (codePoint & 0x3f),
+			)
+		} else {
+			bytes.push(
+				0xf0 | (codePoint >> 18),
+				0x80 | ((codePoint >> 12) & 0x3f),
+				0x80 | ((codePoint >> 6) & 0x3f),
+				0x80 | (codePoint & 0x3f),
+			)
+		}
+	}
+	return bytes
 }
 
 function generateClientSubscriptionId(input: { this: IHookFunctions }): string {
