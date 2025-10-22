@@ -7,6 +7,7 @@ import type {
 	INodeTypeDescription,
 	IDataObject,
 	JsonObject,
+	IHookFunctions,
 } from "n8n-workflow"
 import { NodeApiError, NodeConnectionTypes } from "n8n-workflow"
 
@@ -96,6 +97,7 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 			},
 		},
 	}
+
 	description: INodeTypeDescription = {
 		version: 1,
 		name: "flowOfficeTriggerOnStatusChange",
@@ -110,9 +112,11 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 		defaults: {
 			name: "Trigger on Project Status Change (FlowOffice)",
 		},
+
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		usableAsTool: undefined,
+
 		credentials: [
 			{
 				name: "flowOfficeApi",
@@ -145,71 +149,6 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 				},
 				hint: "The cells of the projekte returned here can vary depending on the board. You can use the 'List columns of a board' node to get the columns of the board and see what is available.",
 			},
-			// Subboard moved into optional filters below
-			// Optional filters collection for IDs/UUIDs and name
-			{
-				displayName: "Optional Filters",
-				name: "optionalFilters",
-				type: "collection",
-				placeholder: "Add filters",
-				default: {},
-				displayOptions: {
-					hide: { boardId: [""] },
-				},
-				hint: "Optionally filter by name, IDs, UUIDs. You can mix single and CSV values.",
-				// eslint-disable-next-line n8n-nodes-base/node-param-collection-type-unsorted-items
-				options: [
-					{
-						displayName: "Subboard Name or ID",
-						name: "subboardId",
-						type: "options",
-						description:
-							'Choose a subboard of the selected board. The list populates after selecting a board. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-						default: "",
-						typeOptions: {
-							loadOptionsDependsOn: ["boardId"],
-							loadOptionsMethod: "listSubboards",
-						},
-					},
-					{
-						displayName: "Name Contains",
-						name: "name",
-						type: "string",
-						default: "",
-						placeholder: "e.g. Kundenprojekt",
-					},
-					{
-						displayName: "Project ID",
-						name: "projectId",
-						type: "number",
-						default: 0,
-						placeholder: "e.g. 123",
-					},
-					{
-						displayName: "Project IDs (CSV)",
-						name: "projectIdsCsv",
-						type: "string",
-						default: "",
-						placeholder: "e.g. 101,102,103",
-						hint: "Comma-separated list of project IDs.",
-					},
-					{
-						displayName: "Project UUID",
-						name: "projectUuid",
-						type: "string",
-						default: "",
-						placeholder: "e.g. 550e8400-e29b-41d4-a716-446655440000",
-					},
-					{
-						displayName: "Project UUIDs (CSV)",
-						name: "projectUuidsCsv",
-						type: "string",
-						default: "",
-						placeholder: "e.g. uuid-1,uuid-2",
-						hint: "Comma-separated list of project UUIDs.",
-					},
-				],
-			},
 
 			{
 				displayName: "Status Column Name or ID",
@@ -231,9 +170,10 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 				},
 				hint: "Pick one status column first, then select multiple labels below.",
 			},
+
 			{
 				displayName: "Status Label Names or IDs",
-				name: "status_labels",
+				name: "fromStatusLabels",
 				type: "multiOptions",
 				default: [],
 				options: [],
@@ -251,103 +191,135 @@ export class FlowOfficeTriggerOnStatusChange implements INodeType {
 					loadOptionsMethod: "listStatusLabels",
 				},
 			},
+
 			{
-				displayName: "Skip (Pagination)",
-				name: "skip",
-				type: "number",
-				default: 0,
-				placeholder: "e.g. 50",
-				hint: "Optional. Offset for pagination. If the response 'hitLimit' is true, increase skip to fetch the next page.",
+				displayName: "Status Label Names or IDs",
+				name: "toStatusLabels",
+				type: "multiOptions",
+				default: [],
+				options: [],
+				description:
+					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				hint: "Specify labels by display name or label UUID. Multiple labels are supported. The filter is only applied when at least one label is specified.",
+				displayOptions: {
+					hide: {
+						boardId: [""],
+						statusColumnKey: ["", EmptyStatusColumnName],
+					},
+				},
+				typeOptions: {
+					loadOptionsDependsOn: ["boardId", "statusColumnKey"],
+					loadOptionsMethod: "listStatusLabels",
+				},
 			},
 		],
 	}
 
-	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const boardIdRaw = this.getNodeParameter("boardId", 0, "")
+	webhookMethods = {
+		default: {
+			async checkExists(this: IHookFunctions): Promise<boolean> {
+				const webhookData = this.getWorkflowStaticData("node")
 
-		const subboardIdRaw = this.getNodeParameter("optionalFilters.subboardId", 0, "")
-
-		const name = this.getNodeParameter("optionalFilters.name", 0, "") as string
-		const projectIdRaw = this.getNodeParameter("optionalFilters.projectId", 0, 0)
-		const projectIdsCsv = this.getNodeParameter("optionalFilters.projectIdsCsv", 0, "") as string
-		const projectUuid = this.getNodeParameter("optionalFilters.projectUuid", 0, "") as string
-		const projectUuidsCsv = this.getNodeParameter(
-			"optionalFilters.projectUuidsCsv",
-			0,
-			"",
-		) as string
-
-		const statusColumnKey = (() => {
-			const statusColumnKeyRaw = this.getNodeParameter("statusColumnKey", 0, "") as string
-
-			if (
-				!statusColumnKeyRaw ||
-				statusColumnKeyRaw === EmptyStatusColumnName ||
-				statusColumnKeyRaw === "-"
-			) {
-				return ""
-			}
-			return statusColumnKeyRaw
-		})()
-
-		const status_labels = this.getNodeParameter("status_labels", 0, []) as string[]
-		const skipRaw = this.getNodeParameter("skip", 0, 0)
-
-		const boardId = boardIdRaw ? z.coerce.number().int().parse(boardIdRaw) : undefined
-		const subBoardId = subboardIdRaw ? z.coerce.number().int().parse(subboardIdRaw) : undefined
-		const projectId = projectIdRaw ? z.coerce.number().int().parse(projectIdRaw) : undefined
-
-		const body: z.infer<typeof n8nApi_v1.endpoints.project.getProjects.inputSchema> = {
-			boardId,
-			subBoardId,
-
-			name: name,
-
-			projektId: (() => {
-				if (!projectId && !projectIdsCsv) return undefined
-				const ids = new Array<string>()
-				if (projectId) ids.push(projectId.toString())
-				if (projectIdsCsv) ids.push(...projectIdsCsv.split(","))
-				return ids.map((id) => Number(id))
-			})(),
-
-			projektUuid: (() => {
-				if (!projectUuid && !projectUuidsCsv) return undefined
-				const uuids = new Array<string>()
-				if (projectUuid) uuids.push(projectUuid)
-				if (projectUuidsCsv) uuids.push(...projectUuidsCsv.split(","))
-				return uuids
-			})(),
-
-			skip: skipRaw ? z.coerce.number().int().min(0).parse(skipRaw) : undefined,
-
-			status: (() => {
-				if (!statusColumnKey) return
-				if (!status_labels || status_labels.length === 0) return
-
-				return {
-					statusColumnKey,
-					filterLabels_keyOrName: status_labels,
+				if (webhookData.webhookId === undefined) {
+					return false
 				}
-			})(),
-		}
+				try {
+					await baserowApiRequest.call(
+						this,
+						"GET",
+						`/api/database/webhooks/${webhookData.webhookId}/`,
+					)
+				} catch (error) {
+					if (error.response.status === 404) {
+						delete webhookData.webhookId
+						delete webhookData.webhookEvents
+						return false
+					}
+					throw error
+				}
+				return true
+			},
+			async create(this: IHookFunctions): Promise<boolean> {
+				const webhookUrl = this.getNodeWebhookUrl("default") as string
 
-		const apiResult = await tryTo_async(() =>
-			invokeEndpoint(n8nApi_v1.endpoints.project.getProjects, {
-				displayOutput_whenZodParsingFails: true,
-				thisArg: this,
-				body,
-			}),
-		)
+				if (webhookUrl.includes("//localhost")) {
+					throw new NodeOperationError(
+						this.getNode(),
+						'The Webhook can not work on "localhost". Please, either setup n8n on a custom domain or start with "--tunnel"!',
+					)
+				}
 
-		if (!apiResult.success) {
-			if (this.continueOnFail()) {
-				return [[{ json: { error: (apiResult.error as Error).message, filters: body } }]]
+				const tableId = this.getNodeParameter("tableId") as string
+				const events = this.getNodeParameter("events", [])
+				const endpoint = `/api/database/webhooks/table/${tableId}/`
+
+				const body = {
+					url: webhookUrl,
+					include_all_events: false,
+					events,
+					request_method: "POST",
+					name: `${this.getWorkflow().name}`,
+					use_user_field_names: true,
+				}
+
+				const webhookData = this.getWorkflowStaticData("node")
+
+				let responseData
+				try {
+					responseData = await baserowApiRequest.call(this, "POST", endpoint, body)
+				} catch (error) {
+					throw error
+				}
+
+				if (responseData.id === undefined || responseData.active !== true) {
+					throw new NodeApiError(this.getNode(), responseData, {
+						message: "Baserow webhook creation response did not contain the expected data.",
+					})
+				}
+
+				webhookData.webhookId = responseData.id as string
+				webhookData.webhookEvents = responseData.events as string[]
+
+				return true
+			},
+
+			async delete(this: IHookFunctions): Promise<boolean> {
+				const webhookData = this.getWorkflowStaticData("node")
+
+				if (webhookData.webhookId !== undefined) {
+					const endpoint = `/api/database/webhooks/${webhookData.webhookId}/`
+					const body = {}
+					try {
+						await baserowApiRequest.call(this, "DELETE", endpoint, body)
+					} catch (error) {
+						if (error.response.status !== 404) {
+							return false
+						}
+					}
+					delete webhookData.webhookId
+					delete webhookData.webhookEvents
+				}
+				return true
+			},
+		},
+	}
+
+	async webhook(this: IWebhookFunctions): Promise<IWebhookResponseData> {
+		const bodyData = this.getBodyData()
+		if (bodyData.hook_id !== undefined && bodyData.action === undefined) {
+			return {
+				webhookResponse: "OK",
 			}
-			throw new NodeApiError(this.getNode(), apiResult.error as JsonObject)
 		}
 
-		const outItem: INodeExecutionData = { json: apiResult.data as IDataObject }
-		return [[outItem]]
+		const returnData: IDataObject[] = []
+
+		returnData.push({
+			body: bodyData,
+		})
+
+		return {
+			workflowData: [this.helpers.returnJsonArray(bodyData)],
+		}
 	}
 }
