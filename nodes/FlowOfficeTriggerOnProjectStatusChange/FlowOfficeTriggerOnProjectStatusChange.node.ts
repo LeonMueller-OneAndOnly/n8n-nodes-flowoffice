@@ -417,11 +417,8 @@ function buildConfigHash(input: {
 	})
 	// Base64url encode to ensure length and portability; satisfies min(16)
 	// Use global btoa/polyfill to avoid Node typings; works in Node runtime
-	const b64 = (
-		typeof Buffer !== "undefined"
-			? (Buffer as any).from(payload, "utf8").toString("base64")
-			: (globalThis as any).btoa(unescape(encodeURIComponent(payload)))
-	) as string
+	const b64 = globalThis.btoa(unescape(encodeURIComponent(payload))) as string
+
 	return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
 }
 
