@@ -8,7 +8,7 @@ import type {
 	IWebhookFunctions,
 	IWebhookResponseData,
 } from "n8n-workflow"
-import { NodeConnectionTypes, NodeOperationError } from "n8n-workflow"
+import { NodeConnectionTypes } from "n8n-workflow"
 
 import { invokeEndpoint } from "../../src/transport/invoke-api"
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
@@ -166,7 +166,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 
 				if (
 					!staticData ||
-					staticData.webhookId === undefined ||
+					staticData.subscriptionId === undefined ||
 					staticData.clientSubscriptionId === undefined
 				) {
 					return false
@@ -200,54 +200,35 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				})
 
 				const upsertBody = {
-					clientSubscriptionId,
-					targetUrl: webhookUrl,
-					filters: {
-						boardId: Number(boardId),
-						statusColumnKey,
-						fromStatusLabels: [...fromStatusLabels],
-						toStatusLabels: [...toStatusLabels],
-					},
+					url: webhookUrl,
+					boardId: Number(boardId),
+					statusColumnKey,
+					subBoardId: null as number | null,
+					fromStatusLabelKeys: [...fromStatusLabels],
+					toStatusLabelKeys: [...toStatusLabels],
 					signingSecret,
+					configHash,
 				}
 
-				// Placeholder local schema (assume bundled api will replace this)
 				const upsertSchema = {
-					method: "PUT" as const,
-					pathname: `/api/v1/webhooks/subscriptions/${encodeURIComponent(clientSubscriptionId)}`,
-					inputSchema: z.object({
-						targetUrl: z.string(),
-						filters: z.object({
-							boardId: z.number().int(),
-							statusColumnKey: z.string(),
-							fromStatusLabels: z.array(z.string()),
-							toStatusLabels: z.array(z.string()),
-						}),
-						signingSecret: z.string().optional(),
-					}),
-					outputSchema: z
-						.object({
-							webhookId: z.number().int(),
-							signingSecret: z.string().optional(),
-						})
-						.passthrough(),
+					...n8nApi_v1.webhooks.projectStatusChanged.upsert,
+					pathname: n8nApi_v1.webhooks.projectStatusChanged.upsert.pathname.replace(
+						"[subscriptionId]",
+						encodeURIComponent(clientSubscriptionId),
+					),
 				}
 				const apiResponse = await invokeEndpoint(upsertSchema, {
 					thisArg: this as unknown as ILoadOptionsFunctions,
-					body: {
-						targetUrl: upsertBody.targetUrl,
-						filters: upsertBody.filters,
-						signingSecret: upsertBody.signingSecret,
-					},
+					body: upsertBody,
 				})
 
-				const webhookId = (apiResponse && (apiResponse.webhookId as number)) ?? undefined
-				const effectiveSigningSecret = apiResponse?.signingSecret ?? signingSecret
+				const subscriptionId = apiResponse?.id as string
+				const effectiveSigningSecret = signingSecret
 
 				setWebhookData_inWorkflowStaticData({
 					this: this,
 					webhookData: {
-						webhookId: webhookId as number,
+						subscriptionId,
 						clientSubscriptionId,
 						signingSecret: effectiveSigningSecret,
 						configHash,
@@ -265,10 +246,11 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 
 				try {
 					const deleteSchema = {
-						method: "DELETE" as const,
-						pathname: `/api/v1/webhooks/subscriptions/${encodeURIComponent(saved.clientSubscriptionId)}`,
-						inputSchema: z.null(),
-						outputSchema: z.object({}).passthrough(),
+						...n8nApi_v1.webhooks.projectStatusChanged.delete,
+						pathname: n8nApi_v1.webhooks.projectStatusChanged.delete.pathname.replace(
+							"[subscriptionId]",
+							encodeURIComponent(saved.clientSubscriptionId),
+						),
 					}
 					await invokeEndpoint(deleteSchema, {
 						thisArg: this as unknown as ILoadOptionsFunctions,
@@ -365,7 +347,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 }
 
 const ZWebhookData = z.object({
-	webhookId: z.number(),
+	subscriptionId: z.string(),
 	clientSubscriptionId: z.string(),
 	signingSecret: z.string(),
 	configHash: z.string(),
