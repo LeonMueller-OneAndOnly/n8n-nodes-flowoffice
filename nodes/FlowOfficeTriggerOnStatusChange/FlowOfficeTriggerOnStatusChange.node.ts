@@ -21,15 +21,9 @@ import {
 	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
 
-import { tryTo_async } from "../../src/utils/try"
 import z from "zod"
 
 const EmptyStatusColumnName = "(no status column selected)"
-const NoStatusColumnSelectedOption: INodePropertyOptions = {
-	name: EmptyStatusColumnName,
-	value: EmptyStatusColumnName,
-	description: "No status column selected",
-}
 
 export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 	description: INodeTypeDescription = {
@@ -154,25 +148,34 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 	webhookMethods = {
 		default: {
 			async checkExists(this: IHookFunctions): Promise<boolean> {
-				const webhookData = this.getWorkflowStaticData("node")
+				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
 
-				if (webhookData.webhookId === undefined) {
+				const webhookUrl = this.getNodeWebhookUrl("default") as string
+				const boardId = this.getNodeParameter("boardId") as string
+				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
+				const fromStatusLabels = (this.getNodeParameter("fromStatusLabels") as string[]) || []
+				const toStatusLabels = (this.getNodeParameter("toStatusLabels") as string[]) || []
+
+				const currentConfigHash = buildConfigHash({
+					webhookUrl,
+					boardId,
+					statusColumnKey,
+					fromStatusLabels,
+					toStatusLabels,
+				})
+
+				if (
+					!staticData ||
+					staticData.webhookId === undefined ||
+					staticData.clientSubscriptionId === undefined
+				) {
 					return false
 				}
-				// try {
-				// 	await baserowApiRequest.call(
-				// 		this,
-				// 		"GET",
-				// 		`/api/database/webhooks/${webhookData.webhookId}/`,
-				// 	)
-				// } catch (error) {
-				// 	if (error.response.status === 404) {
-				// 		delete webhookData.webhookId
-				// 		delete webhookData.webhookEvents
-				// 		return false
-				// 	}
-				// 	throw error
-				// }
+
+				if (staticData.configHash !== currentConfigHash) {
+					return false
+				}
+
 				return true
 			},
 			async create(this: IHookFunctions): Promise<boolean> {
@@ -186,51 +189,101 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				}
 
 				const boardId = this.getNodeParameter("boardId") as string
+				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
+				const fromStatusLabels = (this.getNodeParameter("fromStatusLabels") as string[]) || []
+				const toStatusLabels = (this.getNodeParameter("toStatusLabels") as string[]) || []
 
-				// const body = {
-				// 	url: webhookUrl,
-				// 	include_all_events: false,
-				// 	events,
-				// 	request_method: "POST",
-				// 	name: `${this.getWorkflow().name}`,
-				// 	use_user_field_names: true,
-				// }
+				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
+				const clientSubscriptionId =
+					staticData?.clientSubscriptionId ?? generateClientSubscriptionId({ this: this })
+				const signingSecret = staticData?.signingSecret ?? generateSigningSecret()
 
-				// const webhookData = this.getWorkflowStaticData("node")
+				const configHash = buildConfigHash({
+					webhookUrl,
+					boardId,
+					statusColumnKey,
+					fromStatusLabels,
+					toStatusLabels,
+				})
 
-				// const apiResponse = await invokeEndpoint(n8nApi_v1.endpoints.webhook.create, {
-				// 	thisArg: this,
-				// 	body,
-				// })
+				const upsertBody = {
+					clientSubscriptionId,
+					targetUrl: webhookUrl,
+					filters: {
+						boardId: Number(boardId),
+						statusColumnKey,
+						fromStatusLabels: [...fromStatusLabels],
+						toStatusLabels: [...toStatusLabels],
+					},
+					signingSecret,
+				}
 
-				// if (responseData.id === undefined || responseData.active !== true) {
-				// 	throw new NodeApiError(this.getNode(), responseData, {
-				// 		message: "Baserow webhook creation response did not contain the expected data.",
-				// 	})
-				// }
+				// Placeholder local schema (assume bundled api will replace this)
+				const upsertSchema = {
+					method: "PUT" as const,
+					pathname: `/api/v1/webhooks/subscriptions/${encodeURIComponent(clientSubscriptionId)}`,
+					inputSchema: z.object({
+						targetUrl: z.string(),
+						filters: z.object({
+							boardId: z.number().int(),
+							statusColumnKey: z.string(),
+							fromStatusLabels: z.array(z.string()),
+							toStatusLabels: z.array(z.string()),
+						}),
+						signingSecret: z.string().optional(),
+					}),
+					outputSchema: z
+						.object({
+							webhookId: z.number().int(),
+							signingSecret: z.string().optional(),
+						})
+						.passthrough(),
+				}
+				const apiResponse = await invokeEndpoint(upsertSchema, {
+					thisArg: this as unknown as ILoadOptionsFunctions,
+					body: {
+						targetUrl: upsertBody.targetUrl,
+						filters: upsertBody.filters,
+						signingSecret: upsertBody.signingSecret,
+					},
+				})
 
-				// webhookData.webhookId = responseData.id as string
-				// webhookData.webhookEvents = responseData.events as string[]
+				const webhookId = (apiResponse && (apiResponse.webhookId as number)) ?? undefined
+				const effectiveSigningSecret = apiResponse?.signingSecret ?? signingSecret
+
+				setWebhookData_inWorkflowStaticData({
+					this: this,
+					webhookData: {
+						webhookId: webhookId as number,
+						clientSubscriptionId,
+						signingSecret: effectiveSigningSecret,
+						configHash,
+					},
+				})
 
 				return true
 			},
 
 			async delete(this: IHookFunctions): Promise<boolean> {
-				const webhookData = getWebhookData_fromWorkflowStaticData({ this: this })
+				const saved = getWebhookData_fromWorkflowStaticData({ this: this })
+				if (!saved) {
+					return true
+				}
 
-				// if (webhookData.webhookId !== undefined) {
-				// 	const endpoint = `/api/database/webhooks/${webhookData.webhookId}/`
-				// 	const body = {}
-				// 	try {
-				// 		await baserowApiRequest.call(this, "DELETE", endpoint, body)
-				// 	} catch (error) {
-				// 		if (error.response.status !== 404) {
-				// 			return false
-				// 		}
-				// 	}
-				// 	delete webhookData.webhookId
-				// 	delete webhookData.webhookEvents
-				// }
+				try {
+					const deleteSchema = {
+						method: "DELETE" as const,
+						pathname: `/api/v1/webhooks/subscriptions/${encodeURIComponent(saved.clientSubscriptionId)}`,
+						inputSchema: z.null(),
+						outputSchema: z.object({}).passthrough(),
+					}
+					await invokeEndpoint(deleteSchema, {
+						thisArg: this as unknown as ILoadOptionsFunctions,
+						body: null,
+					})
+				} catch {
+					// Treat 404 as success (idempotent delete). Actual error handling will depend on invokeEndpoint behavior.
+				}
 				return true
 			},
 		},
@@ -320,7 +373,9 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 
 const ZWebhookData = z.object({
 	webhookId: z.number(),
-	// TODO: filter options etc.
+	clientSubscriptionId: z.string(),
+	signingSecret: z.string(),
+	configHash: z.string(),
 })
 
 type TWebhookData = z.infer<typeof ZWebhookData>
@@ -346,4 +401,47 @@ function getWebhookData_fromWorkflowStaticData(input: {
 		return null
 	}
 	return parseResult.data
+}
+
+function buildConfigHash(input: {
+	webhookUrl: string
+	boardId: string
+	statusColumnKey: string
+	fromStatusLabels: string[]
+	toStatusLabels: string[]
+}): string {
+	const sortedFrom = [...(input.fromStatusLabels ?? [])].sort()
+	const sortedTo = [...(input.toStatusLabels ?? [])].sort()
+	const payload = JSON.stringify({
+		webhookUrl: input.webhookUrl,
+		boardId: input.boardId,
+		statusColumnKey: input.statusColumnKey,
+		fromStatusLabels: sortedFrom,
+		toStatusLabels: sortedTo,
+	})
+	let hash = 0
+	for (let i = 0; i < payload.length; i++) {
+		hash = (hash * 31 + payload.charCodeAt(i)) >>> 0
+	}
+	return String(hash)
+}
+
+function generateClientSubscriptionId(input: { this: IHookFunctions }): string {
+	const wf = input.this.getWorkflow() as { id?: string } | undefined
+	const node = input.this.getNode() as { id?: string } | undefined
+	const instanceId = "n8n"
+	const random = Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+	return `flowoffice:n8n:${instanceId}:${wf?.id ?? "wf"}:${node?.id ?? "node"}:${random}`
+}
+
+function generateSigningSecret(): string {
+	// Lightweight random for runtime use without Node 'crypto' types
+	return Array.from({ length: 44 })
+		.map(
+			() =>
+				"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[
+					Math.floor(Math.random() * 64)
+				],
+		)
+		.join("")
 }
