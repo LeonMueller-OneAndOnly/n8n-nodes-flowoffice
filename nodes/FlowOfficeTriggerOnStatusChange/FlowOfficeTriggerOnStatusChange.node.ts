@@ -88,11 +88,11 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				displayName: "Status Column Name or ID",
 				name: "statusColumnKey",
 				type: "options",
-				// eslint-disable-next-line n8n-nodes-base/node-param-default-wrong-for-options
-				default: EmptyStatusColumnName,
+				default: "",
 				description:
 					'Select a status column to filter by, then choose its labels below. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 
+				required: true,
 				displayOptions: {
 					hide: {
 						boardId: [""],
@@ -216,7 +216,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 			},
 
 			async delete(this: IHookFunctions): Promise<boolean> {
-				const webhookData = this.getWorkflowStaticData("node")
+				const webhookData = getWebhookData_fromWorkflowStaticData({ this: this })
 
 				// if (webhookData.webhookId !== undefined) {
 				// 	const endpoint = `/api/database/webhooks/${webhookData.webhookId}/`
@@ -280,17 +280,14 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 			async listStatusColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const selectedBoardId = this.getCurrentNodeParameter("boardId")
 
-				if (!selectedBoardId) return [NoStatusColumnSelectedOption]
+				if (!selectedBoardId) return []
 
 				const boards = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
 					thisArg: this,
 					body: null,
 				})
 				const boardId = Number(selectedBoardId)
-				return [
-					NoStatusColumnSelectedOption,
-					...buildOptions_columnsForBoard_statusOnly(boards, boardId),
-				]
+				return buildOptions_columnsForBoard_statusOnly(boards, boardId)
 			},
 
 			async listStatusLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
