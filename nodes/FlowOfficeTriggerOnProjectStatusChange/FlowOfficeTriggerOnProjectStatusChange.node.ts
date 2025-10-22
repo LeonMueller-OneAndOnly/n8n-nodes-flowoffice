@@ -109,7 +109,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				description:
 					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				placeholder: "Leave empty for ANY from-status",
-				hint: "Optional. Trigger when the previous (FROM) status matches any selected label. Leave empty to match ANY from-status. The node triggers if either FROM or TO filters match.",
+				hint: "Optional. Trigger only when the previous (FROM) status matches any selected label. Leave empty to match ANY from-status. If both FROM and TO are set, both filters must match.",
 				displayOptions: {
 					hide: {
 						boardId: [""],
@@ -131,7 +131,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				description:
 					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				placeholder: "Leave empty for ANY to-status",
-				hint: "Optional. Trigger when the new (TO) status matches any selected label. Leave empty to match ANY to-status. The node triggers if either FROM or TO filters match.",
+				hint: "Optional. Trigger only when the new (TO) status matches any selected label. Leave empty to match ANY to-status. If both FROM and TO are set, both filters must match.",
 				displayOptions: {
 					hide: {
 						boardId: [""],
