@@ -272,6 +272,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					invokeEndpoint(deleteSchema, {
 						thisArg: this,
 						body: null,
+						displayOutput_whenZodParsingFails: true,
 					}),
 				)
 
