@@ -30,8 +30,8 @@ export async function invokeEndpoint<S_input extends z.Schema, S_output extends 
 		{
 			method: apiSchema.method as IHttpRequestMethods,
 			url: baseUrl + apiSchema.pathname,
-			body: input.body,
-			encoding: "json",
+			body: input.body ?? undefined,
+			encoding: input.body ? "json" : undefined,
 		},
 	)
 
