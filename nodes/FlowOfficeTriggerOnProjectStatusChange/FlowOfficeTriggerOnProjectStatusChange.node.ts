@@ -3,7 +3,7 @@ import type {
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
-	IDataObject,
+	INodeExecutionData,
 	IHookFunctions,
 	IWebhookFunctions,
 	IWebhookResponseData,
@@ -25,6 +25,14 @@ import z from "zod"
 import { tryTo_async } from "../../src/utils/try"
 
 const EmptyStatusColumnName = "(no status column selected)"
+const BRANCH_OUTPUTS_CAP = 12
+const BRANCH_OUTPUT_OTHER_INDEX = BRANCH_OUTPUTS_CAP - 1
+const OUTPUT_NAMES = [
+	...Array(BRANCH_OUTPUTS_CAP - 1)
+		.fill(null)
+		.map((_, i) => `={{$parameter["branchOutputs_labels"][${i}] || "Unused"}}`),
+	"Other",
+]
 
 export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 	description: INodeTypeDescription = {
@@ -43,7 +51,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 		},
 
 		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: Array(BRANCH_OUTPUTS_CAP).fill(NodeConnectionTypes.Main),
+		outputNames: OUTPUT_NAMES,
 		usableAsTool: undefined,
 
 		credentials: [
@@ -143,6 +152,47 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					loadOptionsMethod: "listStatusLabels",
 				},
 			},
+
+			// Branching outputs configuration
+			{
+				displayName: "Enable Branching Outputs",
+				name: "branchOutputsEnabled",
+				type: "boolean",
+				default: false,
+				description:
+					"Whether to expose multiple outputs and route items to dedicated outputs based on selected status labels",
+				hint: `Up to ${BRANCH_OUTPUTS_CAP - 1} labels can have their own outputs. All others go to the 'Other' output`,
+				displayOptions: {
+					hide: {
+						boardId: [""],
+						statusColumnKey: ["", EmptyStatusColumnName],
+					},
+				},
+			},
+			{
+				displayName: "Labels With Dedicated Outputs",
+				name: "branchOutputs_labels",
+				type: "multiOptions",
+				default: [],
+				options: [],
+				description:
+					'Choose labels that should each get their own output. Others will go to the "Other" output. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				placeholder: "Select labels for dedicated outputs",
+				hint: `Only the first ${BRANCH_OUTPUTS_CAP - 1} selected labels will get dedicated outputs. Overflow routes to 'Other'.`,
+				displayOptions: {
+					show: {
+						branchOutputsEnabled: [true],
+					},
+					hide: {
+						boardId: [""],
+						statusColumnKey: ["", EmptyStatusColumnName],
+					},
+				},
+				typeOptions: {
+					loadOptionsDependsOn: ["boardId", "statusColumnKey", "branchOutputsEnabled"],
+					loadOptionsMethod: "listStatusLabels",
+				},
+			},
 		],
 	}
 
@@ -158,6 +208,10 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
 				const fromStatusLabels = (this.getNodeParameter("fromStatusLabels") as string[]) || []
 				const toStatusLabels = (this.getNodeParameter("toStatusLabels") as string[]) || []
+				const branchOutputsEnabled =
+					(this.getNodeParameter("branchOutputsEnabled") as boolean) || false
+				const branchOutputs_labels =
+					(this.getNodeParameter("branchOutputs_labels") as string[]) || []
 
 				const currentConfigHash = buildConfigHash({
 					webhookUrl,
@@ -165,6 +219,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					statusColumnKey,
 					fromStatusLabels,
 					toStatusLabels,
+					branchOutputsEnabled,
+					branchOutputs_labels,
 				})
 
 				if (
@@ -220,6 +276,10 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
 				const fromStatusLabels = (this.getNodeParameter("fromStatusLabels") as string[]) || []
 				const toStatusLabels = (this.getNodeParameter("toStatusLabels") as string[]) || []
+				const branchOutputsEnabled =
+					(this.getNodeParameter("branchOutputsEnabled") as boolean) || false
+				const branchOutputs_labels =
+					(this.getNodeParameter("branchOutputs_labels") as string[]) || []
 
 				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
 				const clientSubscriptionId =
@@ -232,6 +292,8 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					statusColumnKey,
 					fromStatusLabels,
 					toStatusLabels,
+					branchOutputsEnabled,
+					branchOutputs_labels,
 				})
 
 				const upsertBody = {
@@ -322,14 +384,34 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 			}
 		}
 
-		const returnData: IDataObject[] = []
+		// Branching outputs routing
+		const branchOutputsEnabled = (this.getNodeParameter("branchOutputsEnabled") as boolean) || false
+		const selectedLabels = (
+			(this.getNodeParameter("branchOutputs_labels") as string[]) || []
+		).slice(0, BRANCH_OUTPUTS_CAP - 1)
 
-		returnData.push({
-			body: bodyData,
-		})
+		const outputs: INodeExecutionData[][] = Array.from({ length: BRANCH_OUTPUTS_CAP }, () => [])
+
+		// Determine target output index
+		let targetIndex = 0
+		if (branchOutputsEnabled) {
+			const toLabelKey = (bodyData as unknown as { status?: { to?: { labelKey?: string } } })
+				?.status?.to?.labelKey
+			if (toLabelKey) {
+				const foundIdx = selectedLabels.indexOf(toLabelKey)
+				targetIndex = foundIdx >= 0 ? foundIdx : BRANCH_OUTPUT_OTHER_INDEX
+			} else {
+				targetIndex = BRANCH_OUTPUT_OTHER_INDEX
+			}
+		} else {
+			// Branching disabled: send to first output only
+			targetIndex = 0
+		}
+
+		outputs[targetIndex] = this.helpers.returnJsonArray(bodyData)
 
 		return {
-			workflowData: [this.helpers.returnJsonArray(bodyData)],
+			workflowData: outputs,
 		}
 	}
 
@@ -434,6 +516,8 @@ function buildConfigHash(input: {
 	statusColumnKey: string
 	fromStatusLabels: string[]
 	toStatusLabels: string[]
+	branchOutputsEnabled?: boolean
+	branchOutputs_labels?: string[]
 }): string {
 	const sortedFrom = [...(input.fromStatusLabels ?? [])].sort()
 	const sortedTo = [...(input.toStatusLabels ?? [])].sort()
@@ -443,6 +527,8 @@ function buildConfigHash(input: {
 		statusColumnKey: input.statusColumnKey,
 		fromStatusLabels: sortedFrom,
 		toStatusLabels: sortedTo,
+		branchOutputsEnabled: Boolean(input.branchOutputsEnabled),
+		branchOutputs_labels: [...(input.branchOutputs_labels ?? [])].sort(),
 	})
 	// Base64url encode to ensure length and portability; satisfies min(16)
 	const b64url = base64UrlEncode(payload)
