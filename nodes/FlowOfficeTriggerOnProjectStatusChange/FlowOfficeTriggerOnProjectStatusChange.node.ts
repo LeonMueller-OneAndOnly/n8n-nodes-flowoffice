@@ -87,7 +87,6 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				},
 				hint: "The cells of the projekte returned here can vary depending on the board. You can use the 'List columns of a board' node to get the columns of the board and see what is available.",
 			},
-
 			{
 				displayName: "Status Column Name or ID",
 				name: "statusColumnKey",
@@ -109,51 +108,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				hint: "Select the status column to watch. The FROM/TO label filters below are optional — leave them empty to match ANY.",
 			},
 
-			{
-				displayName: "When FROM Status Is In",
-				name: "fromStatusLabels",
-				type: "multiOptions",
-				default: [],
-				options: [],
-				description:
-					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				placeholder: "Leave empty for ANY from-status",
-				hint: "Optional. Trigger only when the previous (FROM) status matches any selected label. Leave empty to match ANY from-status. If both FROM and TO are set, both filters must match.",
-				displayOptions: {
-					hide: {
-						boardId: [""],
-						statusColumnKey: ["", EmptyStatusColumnName],
-					},
-				},
-				typeOptions: {
-					loadOptionsDependsOn: ["boardId", "statusColumnKey"],
-					loadOptionsMethod: "listStatusLabels",
-				},
-			},
-
-			{
-				displayName: "When TO Status Is In",
-				name: "toStatusLabels",
-				type: "multiOptions",
-				default: [],
-				options: [],
-				description:
-					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				placeholder: "Leave empty for ANY to-status",
-				hint: "Optional. Trigger only when the new (TO) status matches any selected label. Leave empty to match ANY to-status. If both FROM and TO are set, both filters must match.",
-				displayOptions: {
-					hide: {
-						boardId: [""],
-						statusColumnKey: ["", EmptyStatusColumnName],
-					},
-				},
-				typeOptions: {
-					loadOptionsDependsOn: ["boardId", "statusColumnKey"],
-					loadOptionsMethod: "listStatusLabels",
-				},
-			},
-
-			// Branching outputs configuration
+			// Top-level switch: directly visible
 			{
 				displayName: "Enable Branching Outputs",
 				name: "branchOutputsEnabled",
@@ -162,13 +117,91 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				description:
 					"Whether to expose multiple outputs and route items to dedicated outputs based on selected status labels",
 				hint: `Up to ${BRANCH_OUTPUTS_CAP - 1} labels can have their own outputs. All others go to the 'Other' output`,
-				displayOptions: {
-					hide: {
-						boardId: [""],
-						statusColumnKey: ["", EmptyStatusColumnName],
-					},
-				},
 			},
+
+			// Optional Filters
+			{
+				displayName: "Optional Filters",
+				name: "optionalFilters",
+				type: "collection",
+				placeholder: "Configure optional filters",
+				default: {},
+				options: [
+					{
+						displayName: "Subboard Name or ID",
+						name: "subBoardId",
+						type: "options",
+						default: "",
+						description:
+							'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+						displayOptions: {
+							hide: {
+								"/boardId": [""],
+							},
+						},
+						typeOptions: {
+							loadOptionsDependsOn: ["/boardId"],
+							loadOptionsMethod: "listSubboards",
+						},
+					},
+					{
+						displayName: "When FROM Status Is In",
+						name: "fromStatusLabels",
+						type: "multiOptions",
+						default: [],
+						options: [],
+						description:
+							'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+						placeholder: "Leave empty for ANY from-status",
+						hint: "Optional. Trigger only when the previous (FROM) status matches any selected label. Leave empty to match ANY from-status. If both FROM and TO are set, both filters must match.",
+						displayOptions: {
+							hide: {
+								"/boardId": [""],
+								"/statusColumnKey": ["", EmptyStatusColumnName],
+							},
+						},
+						typeOptions: {
+							loadOptionsDependsOn: ["/boardId", "/statusColumnKey"],
+							loadOptionsMethod: "listStatusLabels",
+						},
+					},
+					{
+						displayName: "When TO Status Is In",
+						name: "toStatusLabels",
+						type: "multiOptions",
+						default: [],
+						options: [],
+						description:
+							'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+						placeholder: "Leave empty for ANY to-status",
+						hint: "Optional. Trigger only when the new (TO) status matches any selected label. Leave empty to match ANY to-status. If both FROM and TO are set, both filters must match.",
+						displayOptions: {
+							hide: {
+								"/boardId": [""],
+								"/statusColumnKey": ["", EmptyStatusColumnName],
+							},
+						},
+						typeOptions: {
+							loadOptionsDependsOn: ["/boardId", "/statusColumnKey"],
+							loadOptionsMethod: "listStatusLabels",
+						},
+					},
+				],
+			},
+
+			// Output Formatting Options
+			{
+				displayName: "Output Formatting Options",
+				name: "outputFormatting",
+				type: "collection",
+				placeholder: "Configure outputs",
+				default: {},
+				options: [
+					// no options currently; kept for future formatting controls
+				],
+			},
+
+			// Top-level: Labels With Dedicated Outputs (visible when branching is enabled)
 			{
 				displayName: "Labels With Dedicated Outputs",
 				name: "branchOutputs_labels",
@@ -206,8 +239,10 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
 				const boardId = this.getNodeParameter("boardId") as string
 				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
-				const fromStatusLabels = (this.getNodeParameter("fromStatusLabels") as string[]) || []
-				const toStatusLabels = (this.getNodeParameter("toStatusLabels") as string[]) || []
+				const fromStatusLabels =
+					(this.getNodeParameter("optionalFilters.fromStatusLabels") as string[]) || []
+				const toStatusLabels =
+					(this.getNodeParameter("optionalFilters.toStatusLabels") as string[]) || []
 				const branchOutputsEnabled =
 					(this.getNodeParameter("branchOutputsEnabled") as boolean) || false
 				const branchOutputs_labels =
@@ -274,8 +309,10 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 
 				const boardId = this.getNodeParameter("boardId") as string
 				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
-				const fromStatusLabels = (this.getNodeParameter("fromStatusLabels") as string[]) || []
-				const toStatusLabels = (this.getNodeParameter("toStatusLabels") as string[]) || []
+				const fromStatusLabels =
+					(this.getNodeParameter("optionalFilters.fromStatusLabels") as string[]) || []
+				const toStatusLabels =
+					(this.getNodeParameter("optionalFilters.toStatusLabels") as string[]) || []
 				const branchOutputsEnabled =
 					(this.getNodeParameter("branchOutputsEnabled") as boolean) || false
 				const branchOutputs_labels =
