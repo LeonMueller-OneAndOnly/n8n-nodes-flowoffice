@@ -87,8 +87,8 @@ export class FlowOfficeListBoardColumns implements INodeType {
 					label: col.label,
 					columnType: col.columnType,
 					statusLabels: labels.map((l: { label: string; enumKey: string }) => ({
-						label: l.label,
-						enumKey: l.enumKey,
+						labelName: l.label,
+						labelKey: l.enumKey,
 					})),
 				}
 			}
