@@ -179,7 +179,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 
 				const { boardId, statusColumnKey, optionalFilters } = getNodeParameters({ this: this })
 
-				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
+				const staticData = getWebhookData_fromWorkflowStaticData({ this: this })
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
 
 				const currentConfigHash = buildConfigHash({
