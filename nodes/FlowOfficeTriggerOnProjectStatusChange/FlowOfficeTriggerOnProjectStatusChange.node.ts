@@ -426,15 +426,6 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 	}
 }
 
-const ZWebhookData = z.object({
-	subscriptionId: z.string(),
-	clientSubscriptionId: z.string(),
-	signingSecret: z.string(),
-	configHash: z.string(),
-})
-
-type TWebhookData = z.infer<typeof ZWebhookData>
-
 function getNodeParameters(input: { this: IHookFunctions }) {
 	const optionalFilters = (input.this.getNodeParameter("optionalFilters") as IDataObject) || {}
 	const fromStatusLabels = (optionalFilters.fromStatusLabels as string[] | undefined) ?? []
@@ -456,6 +447,19 @@ function getNodeParameters(input: { this: IHookFunctions }) {
 	}
 }
 
+const ZWebhookData = z.object({
+	subscriptionId: z.string(),
+	clientSubscriptionId: z.string(),
+	signingSecret: z.string(),
+	configHash: z.string(),
+})
+
+type TWebhookData = z.infer<typeof ZWebhookData>
+
+/**
+ * getWorkflowStaticData("node") is node‑scoped, not shared across nodes.
+ * Only getWorkflowStaticData("workflow") is shared across all nodes in the workflow.
+ */
 function setWebhookData_inWorkflowStaticData(input: {
 	this: IHookFunctions
 	webhookData: TWebhookData
