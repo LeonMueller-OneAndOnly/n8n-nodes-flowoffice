@@ -179,12 +179,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 
 				const { boardId, statusColumnKey, optionalFilters } = getNodeParameters({ this: this })
 
-				this.logger.info(
-					`board-id: ${boardId}, status-column-key: ${statusColumnKey}, optional-filters: ${JSON.stringify(optionalFilters)}`,
-				)
-
 				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
-
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
 
 				const currentConfigHash = buildConfigHash({
@@ -310,7 +305,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					},
 				})
 
-				this.logger.info("successfully upserted webhook")
+				this.logger.info("Webhook upserted successfully")
 
 				return true
 			},
