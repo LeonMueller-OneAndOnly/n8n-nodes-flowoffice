@@ -182,7 +182,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
 
 				const boardId = this.getNodeParameter("boardId") as string
-				const statusColumnKey = this.getNodeParameter("optionalFilters.statusColumnKey") as string
+				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
 
 				const fromStatusLabels =
 					(this.getNodeParameter("optionalFilters.fromStatusLabels") as string[]) || []
@@ -249,7 +249,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
 
 				const boardId = this.getNodeParameter("boardId") as string
-				const statusColumnKey = this.getNodeParameter("optionalFilters.statusColumnKey") as string
+				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
 
 				const fromStatusLabels =
 					(this.getNodeParameter("optionalFilters.fromStatusLabels") as string[]) || []
