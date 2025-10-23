@@ -110,7 +110,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				options: [
 					{
 						displayName: "Subboard Name or ID",
-						name: "subBoardId",
+						name: "subboardId",
 						type: "options",
 						default: "",
 						description:
@@ -177,26 +177,19 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 			async checkExists(this: IHookFunctions): Promise<boolean> {
 				this.logger.info("Checking if webhook exists")
 
+				const { boardId, statusColumnKey, optionalFilters } = getNodeParameters({ this: this })
+
 				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
 
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
-
-				const boardId = this.getNodeParameter("boardId") as string
-				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
-
-				const fromStatusLabels =
-					(this.getNodeParameter("optionalFilters.fromStatusLabels") as string[]) || []
-				const toStatusLabels =
-					(this.getNodeParameter("optionalFilters.toStatusLabels") as string[]) || []
-				const subBoardId = this.getNodeParameter("optionalFilters.subboardId") as string
 
 				const currentConfigHash = buildConfigHash({
 					webhookUrl,
 					boardId,
 					statusColumnKey,
-					fromStatusLabels,
-					toStatusLabels,
-					subBoardId,
+					fromStatusLabels: optionalFilters.fromStatusLabels,
+					toStatusLabels: optionalFilters.toStatusLabels,
+					subBoardId: optionalFilters.subBoardId,
 				})
 
 				if (
@@ -246,18 +239,12 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 			async create(this: IHookFunctions): Promise<boolean> {
 				this.logger.info("Creating webhook")
 
+				const { boardId, statusColumnKey, optionalFilters } = getNodeParameters({ this: this })
+
 				const webhookUrl = this.getNodeWebhookUrl("default") as string
 
-				const boardId = this.getNodeParameter("boardId") as string
-				const statusColumnKey = this.getNodeParameter("statusColumnKey") as string
-
-				const fromStatusLabels =
-					(this.getNodeParameter("optionalFilters.fromStatusLabels") as string[]) || []
-				const toStatusLabels =
-					(this.getNodeParameter("optionalFilters.toStatusLabels") as string[]) || []
-				const subBoardId = this.getNodeParameter("optionalFilters.subboardId") as string
-
 				const staticData = this.getWorkflowStaticData("node") as unknown as Partial<TWebhookData>
+
 				const clientSubscriptionId =
 					staticData?.clientSubscriptionId ?? generateClientSubscriptionId({ this: this })
 				const signingSecret = staticData?.signingSecret ?? generateSigningSecret()
@@ -266,20 +253,22 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					webhookUrl,
 					boardId,
 					statusColumnKey,
-					fromStatusLabels,
-					toStatusLabels,
-					subBoardId,
+					fromStatusLabels: optionalFilters.fromStatusLabels,
+					toStatusLabels: optionalFilters.toStatusLabels,
+					subBoardId: optionalFilters.subBoardId,
 				})
 
 				const upsertBody = {
 					url: webhookUrl,
 					boardId: Number(boardId),
 					statusColumnKey,
-					subBoardId: subBoardId.trim() ? Number(subBoardId) : null,
-					fromStatusLabelKeys: [...fromStatusLabels],
-					toStatusLabelKeys: [...toStatusLabels],
+					fromStatusLabelKeys: optionalFilters.fromStatusLabels,
+					toStatusLabelKeys: optionalFilters.toStatusLabels,
 					signingSecret,
 					configHash,
+					subBoardId: optionalFilters.subBoardId?.trim()
+						? Number(optionalFilters.subBoardId)
+						: null,
 				}
 
 				const upsertSchema = {
@@ -441,6 +430,27 @@ const ZWebhookData = z.object({
 })
 
 type TWebhookData = z.infer<typeof ZWebhookData>
+
+function getNodeParameters(input: { this: IHookFunctions }) {
+	const optionalFilters = (input.this.getNodeParameter("optionalFilters") as IDataObject) || {}
+	const fromStatusLabels = (optionalFilters.fromStatusLabels as string[] | undefined) ?? []
+	const toStatusLabels = (optionalFilters.toStatusLabels as string[] | undefined) ?? []
+	const subBoardId = (optionalFilters.subBoardId as string | undefined) ?? ""
+
+	const boardId = input.this.getNodeParameter("boardId") as string
+	const statusColumnKey = input.this.getNodeParameter("statusColumnKey") as string
+
+	return {
+		boardId,
+		statusColumnKey,
+
+		optionalFilters: {
+			fromStatusLabels,
+			toStatusLabels,
+			subBoardId,
+		},
+	}
+}
 
 function setWebhookData_inWorkflowStaticData(input: {
 	this: IHookFunctions
