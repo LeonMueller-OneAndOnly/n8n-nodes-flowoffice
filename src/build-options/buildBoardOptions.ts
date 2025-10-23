@@ -106,6 +106,7 @@ export function buildOptions_columnsForBoardFiltered(
 	if (!board) return []
 
 	return board.columnSchema
+		.filter((col) => !col.deactivated)
 		.filter((col) => allowedTypes.includes(col.columnType as (typeof allowedTypes)[number]))
 		.map((col) => ({
 			name: `${col.label} (${col.columnType})`,
