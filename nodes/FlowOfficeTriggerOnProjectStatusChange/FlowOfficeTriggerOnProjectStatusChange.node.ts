@@ -97,51 +97,77 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 					loadOptionsDependsOn: ["boardId"],
 					loadOptionsMethod: "listStatusColumns",
 				},
-				hint: "Select the status column to watch. The FROM/TO label filters below are optional — leave them empty to match ANY.",
+				hint: "Select the status column to watch.",
 			},
 
+			// Optional Filters
 			{
-				displayName: "When FROM Status Is In",
-				name: "fromStatusLabels",
-				type: "multiOptions",
-				default: [],
-				options: [],
-				description:
-					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				placeholder: "Leave empty for ANY from-status",
-				hint: "Optional. Trigger only when the previous (FROM) status matches any selected label. Leave empty to match ANY from-status. If both FROM and TO are set, both filters must match.",
-				displayOptions: {
-					hide: {
-						boardId: [""],
-						statusColumnKey: ["", EmptyStatusColumnName],
+				displayName: "Optional Filters",
+				name: "optionalFilters",
+				type: "collection",
+				placeholder: "Configure optional filters",
+				default: {},
+				options: [
+					{
+						displayName: "Subboard Name or ID",
+						name: "subBoardId",
+						type: "options",
+						default: "",
+						description:
+							'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+						displayOptions: {
+							hide: {
+								"/boardId": [""],
+							},
+						},
+						typeOptions: {
+							loadOptionsDependsOn: ["/boardId"],
+							loadOptionsMethod: "listSubboards",
+						},
 					},
-				},
-				typeOptions: {
-					loadOptionsDependsOn: ["boardId", "statusColumnKey"],
-					loadOptionsMethod: "listStatusLabels",
-				},
-			},
-
-			{
-				displayName: "When TO Status Is In",
-				name: "toStatusLabels",
-				type: "multiOptions",
-				default: [],
-				options: [],
-				description:
-					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				placeholder: "Leave empty for ANY to-status",
-				hint: "Optional. Trigger only when the new (TO) status matches any selected label. Leave empty to match ANY to-status. If both FROM and TO are set, both filters must match.",
-				displayOptions: {
-					hide: {
-						boardId: [""],
-						statusColumnKey: ["", EmptyStatusColumnName],
+					{
+						displayName: "When FROM Status Is In",
+						name: "fromStatusLabels",
+						type: "multiOptions",
+						default: [],
+						options: [],
+						description:
+							'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+						placeholder: "Leave empty for ANY from-status",
+						hint: "Optional. Trigger only when the previous (FROM) status matches any selected label. Leave empty to match ANY from-status. If both FROM and TO are set, both filters must match.",
+						displayOptions: {
+							hide: {
+								"/boardId": [""],
+								"/statusColumnKey": ["", EmptyStatusColumnName],
+							},
+						},
+						typeOptions: {
+							loadOptionsDependsOn: ["/boardId", "/statusColumnKey"],
+							loadOptionsMethod: "listStatusLabels",
+						},
 					},
-				},
-				typeOptions: {
-					loadOptionsDependsOn: ["boardId", "statusColumnKey"],
-					loadOptionsMethod: "listStatusLabels",
-				},
+					{
+						displayName: "When TO Status Is In",
+						name: "toStatusLabels",
+						type: "multiOptions",
+						default: [],
+						options: [],
+						description:
+							'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+						placeholder: "Leave empty for ANY to-status",
+						hint: "Optional. Trigger only when the new (TO) status matches any selected label. Leave empty to match ANY to-status. If both FROM and TO are set, both filters must match.",
+						displayOptions: {
+							hide: {
+								"/boardId": [""],
+								"/statusColumnKey": ["", EmptyStatusColumnName],
+							},
+						},
+						typeOptions: {
+							loadOptionsDependsOn: ["/boardId", "/statusColumnKey"],
+							loadOptionsMethod: "listStatusLabels",
+						},
+					},
+				],
 			},
 		],
 	}
