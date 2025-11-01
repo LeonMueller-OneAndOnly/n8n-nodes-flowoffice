@@ -10,16 +10,18 @@ import {
 } from "n8n-workflow"
 
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
-import { invokeEndpoint } from "../../src/transport/invoke-api"
+import { invokeEndpoint, NodeExecutionContext } from "../../src/transport/invoke-api"
 
 import {
 	buildOptions_boardId,
 	buildOptions_columnsForBoard_statusOnly,
+	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
 import {
 	buildSwitchNodeClipboard,
-	fetchStatusColumnsForBoard,
+	StatusColumnDefinition,
 } from "../../src/status-switch-builder/builder"
+import { helper } from "../../src/transport/api-schema-bundled/helper"
 
 export class StatusColumnSwitchBuilder implements INodeType {
 	description: INodeTypeDescription = {
@@ -135,6 +137,7 @@ export class StatusColumnSwitchBuilder implements INodeType {
 		const statusValueExpression = `{{ $json.cells["${statusColumnKey}"].cellValue.labelKey }}`
 
 		const columns = await fetchStatusColumnsForBoard({ thisArg: this, boardId })
+
 		const column = columns.find((col) => col.columnKey === statusColumnKey)
 		if (!column) {
 			throw new NodeOperationError(
@@ -158,4 +161,36 @@ export class StatusColumnSwitchBuilder implements INodeType {
 
 		return [items]
 	}
+}
+
+async function fetchStatusColumnsForBoard(params: {
+	thisArg: NodeExecutionContext
+	boardId: number
+}): Promise<StatusColumnDefinition[]> {
+	const { thisArg, boardId } = params
+
+	const boardsResponse = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+		thisArg,
+		body: null,
+	})
+
+	const board = getBoardById({ boards: boardsResponse, boardId })
+	if (!board) {
+		return []
+	}
+
+	return board.columnSchema
+		.filter((column) => !column.deactivated)
+		.filter((column) => column.columnType === "status")
+		.map((column) => {
+			const { labels } = helper.parseStatus_columnJson({ columnJSON: column.columnJSON ?? "" })
+
+			return {
+				boardId,
+				boardName: board.name,
+				columnKey: column.columnKey,
+				columnLabel: column.label,
+				labels,
+			}
+		})
 }

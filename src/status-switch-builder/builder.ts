@@ -1,7 +1,3 @@
-import { getBoardById } from "../build-options/buildBoardOptions"
-import { invokeEndpoint, NodeExecutionContext } from "../transport/invoke-api"
-import { helper } from "../transport/api-schema-bundled/helper"
-import { n8nApi_v1 } from "../transport/api-schema-bundled/api"
 import { generateUuid } from "../utils/uuid"
 
 export interface StatusLabelDefinition {
@@ -59,38 +55,6 @@ export interface BuildSwitchClipboardOptions {
 }
 
 const DEFAULT_STATUS_VALUE_EXPRESSION = "={{ $json.status.to.labelKey }}"
-
-export async function fetchStatusColumnsForBoard(params: {
-	thisArg: NodeExecutionContext
-	boardId: number
-}): Promise<StatusColumnDefinition[]> {
-	const { thisArg, boardId } = params
-
-	const boardsResponse = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
-		thisArg,
-		body: null,
-	})
-
-	const board = getBoardById({ boards: boardsResponse, boardId })
-	if (!board) {
-		return []
-	}
-
-	return board.columnSchema
-		.filter((column) => !column.deactivated)
-		.filter((column) => column.columnType === "status")
-		.map((column) => {
-			const { labels } = helper.parseStatus_columnJson({ columnJSON: column.columnJSON ?? "" })
-
-			return {
-				boardId,
-				boardName: board.name,
-				columnKey: column.columnKey,
-				columnLabel: column.label,
-				labels,
-			}
-		})
-}
 
 export function buildSwitchNodeClipboard(
 	options: BuildSwitchClipboardOptions,
