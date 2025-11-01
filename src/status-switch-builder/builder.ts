@@ -6,7 +6,7 @@ import type {
 } from "n8n-workflow"
 
 import { getBoardById } from "../build-options/buildBoardOptions"
-import { invokeEndpoint } from "../transport/invoke-api"
+import { invokeEndpoint, NodeExecutionContext } from "../transport/invoke-api"
 import { helper } from "../transport/api-schema-bundled/helper"
 import { n8nApi_v1 } from "../transport/api-schema-bundled/api"
 
@@ -63,12 +63,6 @@ interface BuildSwitchClipboardOptions {
 	statusValueExpression?: string
 	nodeName?: string
 }
-
-type NodeExecutionContext =
-	| IExecuteFunctions
-	| ILoadOptionsFunctions
-	| IHookFunctions
-	| IWebhookFunctions
 
 const DEFAULT_STATUS_VALUE_EXPRESSION = "={{ $json.status.to.labelKey }}"
 

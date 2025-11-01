@@ -5,8 +5,15 @@ import {
 	ILoadOptionsFunctions,
 	IExecuteFunctions,
 	IHookFunctions,
+	IWebhookFunctions,
 } from "n8n-workflow"
 import z from "zod"
+
+export type NodeExecutionContext =
+	| IExecuteFunctions
+	| ILoadOptionsFunctions
+	| IHookFunctions
+	| IWebhookFunctions
 
 export async function invokeEndpoint<S_input extends z.Schema, S_output extends z.Schema>(
 	apiSchema: {
@@ -16,7 +23,7 @@ export async function invokeEndpoint<S_input extends z.Schema, S_output extends 
 		pathname: string
 	},
 	input: {
-		thisArg: ILoadOptionsFunctions | IExecuteFunctions | IHookFunctions
+		thisArg: NodeExecutionContext
 		body: z.input<S_input>
 
 		displayOutput_whenZodParsingFails?: boolean
