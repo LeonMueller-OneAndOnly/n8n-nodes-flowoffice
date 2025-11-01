@@ -69,11 +69,11 @@ export class StatusColumnSwitchBuilder implements INodeType {
 				},
 			},
 			{
-				displayName: "Clipboard Helper",
+				displayName:
+					"Use our webapp-tool to create a copy-pastable n8n-switch-node for your specific status column: <a href='https://app.flow-office.eu/n8n-docs/tools/status-switch-builder' target='_blank'>web builder</a>",
 				name: "clipboardHelper",
 				type: "notice",
-				default:
-					"Use the generated JSON with the n8n clipboard (Edit → Paste from clipboard). For a UI helper visit https://app.flow-office.eu/n8n-docs/tools/status-switch-builder.",
+				default: "",
 			},
 		],
 		usableAsTool: true,

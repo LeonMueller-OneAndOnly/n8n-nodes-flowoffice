@@ -101,13 +101,13 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				hint: "Select the status column to watch.",
 			},
 			{
-				displayName: "Status Switch Builder",
-				name: "statusSwitchBuilderNotice",
-				type: "notice",
-				default: buildStatusSwitchBuilderNoticeExpression({
+				displayName: buildStatusSwitchBuilderNoticeExpression({
 					boardIdExpression: '$parameter["boardId"]',
 					statusColumnKeyExpression: '$parameter["statusColumnKey"]',
 				}),
+				name: "statusSwitchBuilderNotice",
+				type: "notice",
+				default: "",
 				displayOptions: {
 					hide: {
 						boardId: [""],

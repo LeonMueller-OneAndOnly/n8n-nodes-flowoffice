@@ -221,22 +221,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				},
 				hint: "Pick one status column first, then select multiple labels below.",
 			},
-			{
-				displayName: "Status Switch Builder",
-				name: "statusSwitchBuilderNotice",
-				type: "notice",
-				default: buildStatusSwitchBuilderNoticeExpression({
-					boardIdExpression: '$parameter["boardId"]',
-					statusColumnKeyExpression: '$parameter["statusColumnKey"]',
-					ignoredStatusColumnValues: ["", EmptyStatusColumnName],
-				}),
-				displayOptions: {
-					hide: {
-						boardId: [""],
-						statusColumnKey: ["", EmptyStatusColumnName],
-					},
-				},
-			},
+
 			{
 				displayName: "Status Label Names or IDs",
 				name: "status_labels",
@@ -257,6 +242,24 @@ export class FlowOfficeGetProjects implements INodeType {
 					loadOptionsMethod: "listStatusLabels",
 				},
 			},
+			{
+				displayName: buildStatusSwitchBuilderNoticeExpression({
+					boardIdExpression: '$parameter["boardId"]',
+					statusColumnKeyExpression: '$parameter["statusColumnKey"]',
+					ignoredStatusColumnValues: ["", EmptyStatusColumnName],
+				}),
+				name: "statusSwitchBuilderNotice",
+				type: "notice",
+				default: "",
+
+				displayOptions: {
+					hide: {
+						boardId: [""],
+						statusColumnKey: ["", EmptyStatusColumnName],
+					},
+				},
+			},
+
 			{
 				displayName: "Skip (Pagination)",
 				name: "skip",

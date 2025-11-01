@@ -57,21 +57,33 @@ export function buildStatusSwitchBuilderNoticeExpression(
 ): string {
 	const { boardIdExpression, statusColumnKeyExpression, ignoredStatusColumnValues = [] } = options
 
-	const functionSource = buildStatusSwitchBuilderUrl.toString()
 	const ignoredValuesLiteral = JSON.stringify(ignoredStatusColumnValues)
-	const statusExpression = statusColumnKeyExpression ?? "undefined"
 	const baseUrlLiteral = JSON.stringify(STATUS_SWITCH_BUILDER_BASE_URL)
+	const statusExpression = statusColumnKeyExpression ?? "undefined"
 
-	return `={{ (() => {
-	const buildStatusSwitchBuilderUrl = ${functionSource};
-	const url = buildStatusSwitchBuilderUrl({
-		baseUrl: ${baseUrlLiteral},
-		boardId: ${boardIdExpression},
-		statusColumnKey: ${statusExpression},
-		ignoredStatusColumnValues: ${ignoredValuesLiteral},
-	});
-	return 'Need a ready-made Switch node per status label? Add the "Status Column Switch Builder (FlowOffice)" node or open the <a href="' + url + '" target="_blank">web builder</a>.';
+	const urlExpression = `{{ (() => {
+	const ignored = new Set(${ignoredValuesLiteral});
+	const normalize = (value) => {
+		if (value === undefined || value === null) {
+			return undefined;
+		}
+		const normalized = String(value).trim();
+		return normalized.length > 0 ? normalized : undefined;
+	};
+	const params = [];
+	const pushParam = (key, raw) => {
+		const normalized = normalize(raw);
+		if (!normalized || ignored.has(normalized)) {
+			return;
+		}
+		params.push(key + '=' + encodeURIComponent(normalized));
+	};
+	pushParam('boardId', ${boardIdExpression});
+	pushParam('statusColumnKey', ${statusExpression});
+	return ${baseUrlLiteral} + (params.length ? '?' + params.join('&') : '');
 })() }}`
+
+	return `Do you need to filter by a status in your workflow? Use our Status-Switch-Builder to easily create a n8n-switch-node with all status labels: <a href='${urlExpression}' target='_blank'>web builder</a>`
 }
 
 export { STATUS_SWITCH_BUILDER_BASE_URL }
