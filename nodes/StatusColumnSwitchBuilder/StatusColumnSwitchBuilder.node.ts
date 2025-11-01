@@ -156,7 +156,7 @@ export class StatusColumnSwitchBuilder implements INodeType {
 		})
 
 		items.push({
-			json: { nodeJsonToCopyPaste: json },
+			json: { nodeJsonToCopyPaste: JSON.parse(json) },
 		})
 
 		return [items]

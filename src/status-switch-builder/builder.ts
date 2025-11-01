@@ -86,8 +86,8 @@ export function buildSwitchNodeClipboard(
 	const json = JSON.stringify(workflow, null, 2)
 
 	return {
-		workflow,
 		json,
+		workflow,
 		nodeName,
 		outputCount: rules.length,
 	}
