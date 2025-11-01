@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-flowoffice",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Development", "Developer Tools"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://app.flow-office.eu/n8n-docs"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://app.flow-office.eu/n8n-docs/tools/status-switch-builder"
+			}
+		]
+	}
+}
