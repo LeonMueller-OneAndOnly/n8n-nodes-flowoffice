@@ -99,18 +99,6 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				},
 				hint: "Select the status column to watch.",
 			},
-			{
-				displayName: getStatusSwitchBuilderHintDisplayname(),
-				name: "statusSwitchBuilderNotice",
-				type: "notice",
-				default: "",
-				displayOptions: {
-					hide: {
-						boardId: [""],
-					},
-				},
-			},
-
 			// Optional Filters
 			{
 				displayName: "Optional Filters",
@@ -179,6 +167,19 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 						},
 					},
 				],
+			},
+			// ---
+
+			{
+				displayName: getStatusSwitchBuilderHintDisplayname(),
+				name: "statusSwitchBuilderNotice",
+				type: "notice",
+				default: "",
+				displayOptions: {
+					hide: {
+						boardId: [""],
+					},
+				},
 			},
 		],
 	}
