@@ -77,19 +77,19 @@ export class StatusColumnSwitchBuilder implements INodeType {
 				},
 				hint: "Pick the column whose labels should become Switch outputs.",
 			},
-			{
-				displayName: "Status Label Key Expression",
-				name: "statusValueExpression",
-				type: "string",
-				hint: "Expression used for the left side of each Switch condition. Adjust if your trigger uses a different field.",
-				default: "={{ $json.status.to.labelKey }}",
-				placeholder: "={{ $json.status.to.labelKey }}",
-				displayOptions: {
-					hide: {
-						boardId: [""],
-					},
-				},
-			},
+			// {
+			// 	displayName: "Status Label Key Expression",
+			// 	name: "statusValueExpression",
+			// 	type: "string",
+			// 	hint: "Expression used for the left side of each Switch condition. Adjust if your trigger uses a different field.",
+			// 	default: "={{ $json.status.to.labelKey }}",
+			// 	placeholder: "={{ $json.status.to.labelKey }}",
+			// 	displayOptions: {
+			// 		hide: {
+			// 			boardId: [""],
+			// 		},
+			// 	},
+			// },
 			{
 				displayName:
 					"How to Use: 1. Select a board and status column. 2. Run the node. 3. Copy the whole output of this node into your clipboard (possible in the json view) and paste it with Strg-V into your workflow. You can also use our <a href='https://app.flow-office.eu/n8n-docs/tools/status-switch-builder' target='_blank'>status switch web builder</a> for a guided copy step.",
@@ -131,13 +131,8 @@ export class StatusColumnSwitchBuilder implements INodeType {
 
 		const boardId = Number(this.getNodeParameter("boardId", 0))
 		const statusColumnKey = this.getNodeParameter("statusColumnKey", 0) as string
-		const statusValueExpression = this.getNodeParameter(
-			"statusValueExpression",
-			0,
-			"={{ $json.status.to.labelKey }}",
-		)
-			?.toString()
-			.trim()
+
+		const statusValueExpression = `{{ $json.cells["${statusColumnKey}"].cellValue.labelKey }}`
 
 		const columns = await fetchStatusColumnsForBoard({ thisArg: this, boardId })
 		const column = columns.find((col) => col.columnKey === statusColumnKey)
