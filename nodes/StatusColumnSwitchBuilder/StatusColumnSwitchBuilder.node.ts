@@ -16,7 +16,7 @@ import {
 import {
 	buildSwitchNodeClipboard,
 	fetchStatusColumnsForBoard,
-} from "../../src/status-switch-builder"
+} from "../../src/status-switch-builder/builder"
 import { invokeEndpoint } from "../../src/transport/invoke-api"
 import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
 

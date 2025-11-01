@@ -20,10 +20,10 @@ import {
 	buildOptions_columnsForBoard_statusOnly,
 	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
-import { buildStatusSwitchBuilderNoticeExpression } from "../../src/status-switch-builder"
 
 import z from "zod"
 import { tryTo_async } from "../../src/utils/try"
+import { getStatusSwitchBuilderHintDisplayname } from "../../src/status-switch-builder/link"
 
 const EmptyStatusColumnName = "(no status column selected)"
 
@@ -101,10 +101,7 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				hint: "Select the status column to watch.",
 			},
 			{
-				displayName: buildStatusSwitchBuilderNoticeExpression({
-					boardIdExpression: '$parameter["boardId"]',
-					statusColumnKeyExpression: '$parameter["statusColumnKey"]',
-				}),
+				displayName: getStatusSwitchBuilderHintDisplayname(),
 				name: "statusSwitchBuilderNotice",
 				type: "notice",
 				default: "",
