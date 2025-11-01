@@ -2,6 +2,16 @@ import { getBoardById } from "../build-options/buildBoardOptions"
 import { invokeEndpoint, NodeExecutionContext } from "../transport/invoke-api"
 import { helper } from "../transport/api-schema-bundled/helper"
 import { n8nApi_v1 } from "../transport/api-schema-bundled/api"
+import { generateUuid } from "../utils/uuid"
+
+export type {
+	StatusColumnDefinition,
+	StatusLabelDefinition,
+	SwitchClipboardBuildResult,
+	SwitchClipboardWorkflow,
+	BuildSwitchClipboardOptions,
+	StatusSwitchBuilderItem,
+}
 
 interface StatusLabelDefinition {
 	label: string
@@ -79,7 +89,7 @@ export async function fetchStatusColumnsForBoard(params: {
 		.filter((column) => !column.deactivated)
 		.filter((column) => column.columnType === "status")
 		.map((column) => {
-			const labels = parseStatusLabels(column.columnJSON ?? "")
+			const { labels } = helper.parseStatus_columnJson({ columnJSON: column.columnJSON ?? "" })
 
 			return {
 				boardId,
@@ -91,26 +101,13 @@ export async function fetchStatusColumnsForBoard(params: {
 		})
 }
 
-function parseStatusLabels(columnJSON: string): StatusLabelDefinition[] {
-	try {
-		const { labels } = helper.parseStatus_columnJson({ columnJSON })
-		return labels.map((label) => ({
-			label: label.label,
-			enumKey: label.enumKey,
-			backgroundColor: label.backgroundColor,
-		}))
-	} catch (error) {
-		return []
-	}
-}
-
 export function buildSwitchNodeClipboard(
 	options: BuildSwitchClipboardOptions,
 ): SwitchClipboardBuildResult {
 	const {
-		boardId,
-		boardName,
-		columnKey,
+		// boardId,
+		// boardName,
+		// columnKey,
 		columnLabel,
 		labels,
 		statusValueExpression = DEFAULT_STATUS_VALUE_EXPRESSION,
@@ -250,18 +247,9 @@ function createEmptyConnections(outputCount: number): unknown[][] {
 }
 
 function createN8nIdentifier(): string {
-	return randomUUID()
+	return generateUuid()
 }
 
 function createInstanceIdentifier(): string {
-	return randomUUID().replace(/-/g, "")
-}
-
-export type {
-	StatusColumnDefinition,
-	StatusLabelDefinition,
-	SwitchClipboardBuildResult,
-	SwitchClipboardWorkflow,
-	BuildSwitchClipboardOptions,
-	StatusSwitchBuilderItem,
+	return generateUuid().replace(/-/g, "")
 }
