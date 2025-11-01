@@ -92,7 +92,7 @@ export class StatusColumnSwitchBuilder implements INodeType {
 			},
 			{
 				displayName:
-					"How to Use: 1. Select a board and status column. 2. Run the node. 3. Copy the whole output of this node into your clipboard (possible in the json view) and paste it with Strg-V into your workflow. You can also use our <a href='https://app.flow-office.eu/n8n-docs/tools/status-switch-builder' target='_blank'>web builder</a> for a guided copy step.",
+					"How to Use: 1. Select a board and status column. 2. Run the node. 3. Copy the whole output of this node into your clipboard (possible in the json view) and paste it with Strg-V into your workflow. You can also use our <a href='https://app.flow-office.eu/n8n-docs/tools/status-switch-builder' target='_blank'>status switch web builder</a> for a guided copy step.",
 				name: "clipboardHelper",
 				type: "notice",
 				default: "",
