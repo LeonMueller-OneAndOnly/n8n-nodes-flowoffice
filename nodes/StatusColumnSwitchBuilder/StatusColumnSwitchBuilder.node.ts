@@ -95,9 +95,13 @@ export class StatusColumnSwitchBuilder implements INodeType {
 		const items: INodeExecutionData[] = []
 
 		const boardId = Number(this.getNodeParameter("boardId", 0))
-		const statusValueExpression = (
-			this.getNodeParameter("statusValueExpression", 0, "={{ $json.status.to.labelKey }}") as string
-		).trim()
+		const statusValueExpression = this.getNodeParameter(
+			"statusValueExpression",
+			0,
+			"={{ $json.status.to.labelKey }}",
+		)
+			?.toString()
+			.trim()
 
 		const columns = await fetchStatusColumnsForBoard({ thisArg: this, boardId })
 		const switchItems = buildSwitchBuilderItems(columns, {
