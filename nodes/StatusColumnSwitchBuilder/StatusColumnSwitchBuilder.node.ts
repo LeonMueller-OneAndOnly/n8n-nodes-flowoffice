@@ -149,7 +149,7 @@ export class StatusColumnSwitchBuilder implements INodeType {
 			columnKey: column.columnKey,
 			columnLabel: column.columnLabel,
 			labels: column.labels,
-			statusValueExpression: statusValueExpression || undefined,
+			statusValueExpression,
 		})
 
 		items.push({
