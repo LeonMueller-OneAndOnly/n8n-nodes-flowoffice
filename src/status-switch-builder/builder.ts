@@ -1,10 +1,3 @@
-import type {
-	IExecuteFunctions,
-	IHookFunctions,
-	ILoadOptionsFunctions,
-	IWebhookFunctions,
-} from "n8n-workflow"
-
 import { getBoardById } from "../build-options/buildBoardOptions"
 import { invokeEndpoint, NodeExecutionContext } from "../transport/invoke-api"
 import { helper } from "../transport/api-schema-bundled/helper"
