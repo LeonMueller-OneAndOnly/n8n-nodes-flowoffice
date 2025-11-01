@@ -20,10 +20,9 @@ import {
 	buildOptions_columnsForBoard_statusOnly,
 	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
-
-import z from "zod"
-import { tryTo_async } from "../../src/utils/try"
 import { getStatusSwitchBuilderHintDisplayname } from "../../src/status-switch-builder/link"
+import { tryTo_async } from "../../src/utils/try"
+import z from "zod"
 
 const EmptyStatusColumnName = "(no status column selected)"
 
