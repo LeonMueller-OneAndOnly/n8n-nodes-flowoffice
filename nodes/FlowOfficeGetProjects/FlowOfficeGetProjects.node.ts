@@ -221,6 +221,19 @@ export class FlowOfficeGetProjects implements INodeType {
 				hint: "Pick one status column first, then select multiple labels below.",
 			},
 			{
+				displayName: "Status Switch Builder",
+				name: "statusSwitchBuilderNotice",
+				type: "notice",
+				default:
+					"Need a ready-made Switch node per status label? Add the 'Status Column Switch Builder (FlowOffice)' node or visit https://app.flow-office.eu/n8n-docs/tools/status-switch-builder.",
+				displayOptions: {
+					hide: {
+						boardId: [""],
+						statusColumnKey: ["", EmptyStatusColumnName],
+					},
+				},
+			},
+			{
 				displayName: "Status Label Names or IDs",
 				name: "status_labels",
 				type: "multiOptions",

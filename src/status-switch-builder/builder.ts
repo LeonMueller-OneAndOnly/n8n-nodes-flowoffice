@@ -4,22 +4,13 @@ import { helper } from "../transport/api-schema-bundled/helper"
 import { n8nApi_v1 } from "../transport/api-schema-bundled/api"
 import { generateUuid } from "../utils/uuid"
 
-export type {
-	StatusColumnDefinition,
-	StatusLabelDefinition,
-	SwitchClipboardBuildResult,
-	SwitchClipboardWorkflow,
-	BuildSwitchClipboardOptions,
-	StatusSwitchBuilderItem,
-}
-
 interface StatusLabelDefinition {
 	label: string
 	enumKey: string
 	backgroundColor?: string
 }
 
-interface StatusColumnDefinition {
+export interface StatusColumnDefinition {
 	boardId: number
 	boardName?: string
 	columnKey: string
@@ -27,14 +18,14 @@ interface StatusColumnDefinition {
 	labels: StatusLabelDefinition[]
 }
 
-interface SwitchClipboardWorkflow {
+export interface SwitchClipboardWorkflow {
 	nodes: Array<Record<string, unknown>>
 	connections: Record<string, { main: unknown[][] }>
 	pinData: Record<string, unknown>
 	meta: Record<string, unknown>
 }
 
-interface SwitchClipboardBuildResult {
+export interface SwitchClipboardBuildResult {
 	workflow: SwitchClipboardWorkflow
 	json: string
 	nodeName: string
@@ -45,7 +36,7 @@ interface BuildItemsOptions {
 	statusValueExpression?: string
 }
 
-interface StatusSwitchBuilderItem {
+export interface StatusSwitchBuilderItem {
 	boardId: number
 	boardName?: string
 	columnKey: string
@@ -57,7 +48,7 @@ interface StatusSwitchBuilderItem {
 	outputCount: number
 }
 
-interface BuildSwitchClipboardOptions {
+export interface BuildSwitchClipboardOptions {
 	boardId: number
 	boardName?: string
 	columnKey: string

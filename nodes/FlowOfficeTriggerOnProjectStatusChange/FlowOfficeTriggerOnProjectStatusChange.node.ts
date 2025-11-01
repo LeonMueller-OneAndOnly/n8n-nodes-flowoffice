@@ -99,6 +99,18 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				},
 				hint: "Select the status column to watch.",
 			},
+			{
+				displayName: "Status Switch Builder",
+				name: "statusSwitchBuilderNotice",
+				type: "notice",
+				default:
+					"Need a ready-made Switch node per status label? Add the 'Status Column Switch Builder (FlowOffice)' node or visit https://app.flow-office.eu/n8n-docs/tools/status-switch-builder.",
+				displayOptions: {
+					hide: {
+						boardId: [""],
+					},
+				},
+			},
 
 			// Optional Filters
 			{
