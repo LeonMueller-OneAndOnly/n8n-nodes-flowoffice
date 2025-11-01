@@ -1,13 +1,16 @@
-import type {
+import {
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
 	INodeExecutionData,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
+	NodeConnectionTypes,
+	NodeOperationError,
 } from "n8n-workflow"
 
-import { NodeConnectionTypes, NodeOperationError } from "n8n-workflow"
+import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
+import { invokeEndpoint } from "../../src/transport/invoke-api"
 
 import {
 	buildOptions_boardId,
@@ -17,8 +20,6 @@ import {
 	buildSwitchNodeClipboard,
 	fetchStatusColumnsForBoard,
 } from "../../src/status-switch-builder/builder"
-import { invokeEndpoint } from "../../src/transport/invoke-api"
-import { n8nApi_v1 } from "../../src/transport/api-schema-bundled/api"
 
 export class StatusColumnSwitchBuilder implements INodeType {
 	description: INodeTypeDescription = {
