@@ -56,15 +56,13 @@ export interface BuildSwitchClipboardOptions {
 
 const DEFAULT_STATUS_VALUE_EXPRESSION = "={{ $json.status.to.labelKey }}"
 
+// better, works with all current nodes that output projects:
 // {{ $json.cells["Status-status-boardId:0-Status-0e1e0fb5-b3e1-11f0-8e58-d186b1fcf1f7"].cellValue.labelKey }}
 
 export function buildSwitchNodeClipboard(
 	options: BuildSwitchClipboardOptions,
 ): SwitchClipboardBuildResult {
 	const {
-		// boardId,
-		// boardName,
-		// columnKey,
 		columnLabel,
 		labels,
 		statusValueExpression = DEFAULT_STATUS_VALUE_EXPRESSION,
