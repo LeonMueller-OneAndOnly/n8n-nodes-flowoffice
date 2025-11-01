@@ -23,6 +23,7 @@ import {
 
 import z from "zod"
 import { tryTo_async } from "../../src/utils/try"
+import { getStatusSwitchBuilderHintDisplayname } from "../../src/status-switch-builder/link"
 
 const EmptyStatusColumnName = "(no status column selected)"
 const NoStatusColumnSelectedOption: INodePropertyOptions = {
@@ -220,6 +221,7 @@ export class FlowOfficeGetProjects implements INodeType {
 				},
 				hint: "Pick one status column first, then select multiple labels below.",
 			},
+
 			{
 				displayName: "Status Label Names or IDs",
 				name: "status_labels",
@@ -240,6 +242,20 @@ export class FlowOfficeGetProjects implements INodeType {
 					loadOptionsMethod: "listStatusLabels",
 				},
 			},
+			{
+				displayName: getStatusSwitchBuilderHintDisplayname(),
+				name: "statusSwitchBuilderNotice",
+				type: "notice",
+				default: "",
+
+				displayOptions: {
+					hide: {
+						boardId: [""],
+						statusColumnKey: ["", EmptyStatusColumnName],
+					},
+				},
+			},
+
 			{
 				displayName: "Skip (Pagination)",
 				name: "skip",
