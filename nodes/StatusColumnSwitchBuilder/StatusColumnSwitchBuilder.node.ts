@@ -7,11 +7,14 @@ import type {
 	INodeTypeDescription,
 } from "n8n-workflow"
 
-import { NodeConnectionTypes } from "n8n-workflow"
+import { NodeConnectionTypes, NodeOperationError } from "n8n-workflow"
 
-import { buildOptions_boardId } from "../../src/build-options/buildBoardOptions"
 import {
-	buildSwitchBuilderItems,
+	buildOptions_boardId,
+	buildOptions_columnsForBoard_statusOnly,
+} from "../../src/build-options/buildBoardOptions"
+import {
+	buildSwitchNodeClipboard,
 	fetchStatusColumnsForBoard,
 } from "../../src/status-switch-builder"
 import { invokeEndpoint } from "../../src/transport/invoke-api"
@@ -55,12 +58,30 @@ export class StatusColumnSwitchBuilder implements INodeType {
 				hint: "Select the board whose status columns you want to convert into Switch-node clipboard JSON.",
 			},
 			{
-				displayName: "Status Value Expression",
+				displayName: "Status Column Name or ID",
+				name: "statusColumnKey",
+				type: "options",
+				default: "",
+				required: true,
+				description:
+					'Select the status column that should be transformed into a Switch node. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				displayOptions: {
+					hide: {
+						boardId: [""],
+					},
+				},
+				typeOptions: {
+					loadOptionsDependsOn: ["boardId"],
+					loadOptionsMethod: "listStatusColumns",
+				},
+				hint: "Pick the column whose labels should become Switch outputs.",
+			},
+			{
+				displayName: "Status Label Key Expression",
 				name: "statusValueExpression",
 				type: "string",
 				default: "={{ $json.status.to.labelKey }}",
-				description:
-					"Expression used for the left side of each Switch condition. Adjust if your trigger uses a different field.",
+				hint: "Expression used for the left side of each Switch condition. Adjust if your trigger uses a different field.",
 				placeholder: "={{ $json.status.to.labelKey }}",
 				displayOptions: {
 					hide: {
@@ -70,7 +91,7 @@ export class StatusColumnSwitchBuilder implements INodeType {
 			},
 			{
 				displayName:
-					"Use our status-switch-builder tool to create a copy-pastable n8n-switch-node for your specific status column: <a href='https://app.flow-office.eu/n8n-docs/tools/status-switch-builder' target='_blank'>web builder</a>",
+					"How to Use: 1. Select a board and status column. 2. Run the node. 3. Copy the whole output of this node (possible in the json view) and paste it with Strg-V into your workflow. You can also use our <a href='https://app.flow-office.eu/n8n-docs/tools/status-switch-builder' target='_blank'>web builder</a> for a guided copy step.",
 				name: "clipboardHelper",
 				type: "notice",
 				default: "",
@@ -88,6 +109,19 @@ export class StatusColumnSwitchBuilder implements INodeType {
 				})
 				return buildOptions_boardId(boardsResponse)
 			},
+			async listStatusColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const selectedBoardId = this.getCurrentNodeParameter("boardId")
+				if (!selectedBoardId) {
+					return []
+				}
+
+				const boardsResponse = await invokeEndpoint(n8nApi_v1.endpoints.board.listBoards, {
+					thisArg: this,
+					body: null,
+				})
+				const boardId = Number(selectedBoardId)
+				return buildOptions_columnsForBoard_statusOnly(boardsResponse, boardId)
+			},
 		},
 	}
 
@@ -95,6 +129,7 @@ export class StatusColumnSwitchBuilder implements INodeType {
 		const items: INodeExecutionData[] = []
 
 		const boardId = Number(this.getNodeParameter("boardId", 0))
+		const statusColumnKey = this.getNodeParameter("statusColumnKey", 0) as string
 		const statusValueExpression = this.getNodeParameter(
 			"statusValueExpression",
 			0,
@@ -104,26 +139,26 @@ export class StatusColumnSwitchBuilder implements INodeType {
 			.trim()
 
 		const columns = await fetchStatusColumnsForBoard({ thisArg: this, boardId })
-		const switchItems = buildSwitchBuilderItems(columns, {
+		const column = columns.find((col) => col.columnKey === statusColumnKey)
+		if (!column) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Status column '${statusColumnKey}' was not found on board '${boardId}'. Please refresh the node options and try again.`,
+			)
+		}
+
+		const { json } = buildSwitchNodeClipboard({
+			boardId,
+			boardName: column.boardName,
+			columnKey: column.columnKey,
+			columnLabel: column.columnLabel,
+			labels: column.labels,
 			statusValueExpression: statusValueExpression || undefined,
 		})
 
-		for (const switchItem of switchItems) {
-			items.push({
-				json: {
-					boardId: switchItem.boardId,
-					boardName: switchItem.boardName,
-					columnKey: switchItem.columnKey,
-					columnLabel: switchItem.columnLabel,
-					labelCount: switchItem.labels.length,
-					labels: switchItem.labels,
-					switchNodeName: switchItem.nodeName,
-					switchNodeJson: switchItem.switchNodeJson,
-					switchNodeWorkflow: switchItem.switchNodeWorkflow,
-					outputCount: switchItem.outputCount,
-				},
-			})
-		}
+		items.push({
+			json: JSON.parse(json),
+		})
 
 		return [items]
 	}
