@@ -80,8 +80,8 @@ export class StatusColumnSwitchBuilder implements INodeType {
 				displayName: "Status Label Key Expression",
 				name: "statusValueExpression",
 				type: "string",
-				default: "={{ $json.status.to.labelKey }}",
 				hint: "Expression used for the left side of each Switch condition. Adjust if your trigger uses a different field.",
+				default: "={{ $json.status.to.labelKey }}",
 				placeholder: "={{ $json.status.to.labelKey }}",
 				displayOptions: {
 					hide: {
