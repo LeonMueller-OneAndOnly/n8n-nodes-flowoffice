@@ -243,6 +243,14 @@ export class FlowOfficeGetProjects implements INodeType {
 				},
 			},
 			{
+				displayName: "Skip (Pagination)",
+				name: "skip",
+				type: "number",
+				default: 0,
+				placeholder: "e.g. 50",
+				hint: "Optional. Offset for pagination. If the response 'hitLimit' is true, increase skip to fetch the next page.",
+			},
+			{
 				displayName: getStatusSwitchBuilderHintDisplayname(),
 				name: "statusSwitchBuilderNotice",
 				type: "notice",
@@ -251,18 +259,8 @@ export class FlowOfficeGetProjects implements INodeType {
 				displayOptions: {
 					hide: {
 						boardId: [""],
-						statusColumnKey: ["", EmptyStatusColumnName],
 					},
 				},
-			},
-
-			{
-				displayName: "Skip (Pagination)",
-				name: "skip",
-				type: "number",
-				default: 0,
-				placeholder: "e.g. 50",
-				hint: "Optional. Offset for pagination. If the response 'hitLimit' is true, increase skip to fetch the next page.",
 			},
 		],
 	}
