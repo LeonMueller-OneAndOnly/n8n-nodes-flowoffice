@@ -12,3 +12,11 @@ export type {
 	SwitchClipboardBuildResult,
 	SwitchClipboardWorkflow,
 } from "./builder"
+
+export {
+	buildStatusSwitchBuilderNoticeExpression,
+	buildStatusSwitchBuilderUrl,
+	STATUS_SWITCH_BUILDER_BASE_URL,
+} from "./link"
+
+export type { BuildStatusSwitchBuilderUrlOptions } from "./link"

@@ -4,7 +4,7 @@ import { helper } from "../transport/api-schema-bundled/helper"
 import { n8nApi_v1 } from "../transport/api-schema-bundled/api"
 import { generateUuid } from "../utils/uuid"
 
-interface StatusLabelDefinition {
+export interface StatusLabelDefinition {
 	label: string
 	enumKey: string
 	backgroundColor?: string

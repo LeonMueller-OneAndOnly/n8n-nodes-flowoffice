@@ -20,6 +20,7 @@ import {
 	buildOptions_columnsForBoard_statusOnly,
 	getBoardById,
 } from "../../src/build-options/buildBoardOptions"
+import { buildStatusSwitchBuilderNoticeExpression } from "../../src/status-switch-builder"
 
 import z from "zod"
 import { tryTo_async } from "../../src/utils/try"
@@ -103,8 +104,10 @@ export class FlowOfficeTriggerOnProjectStatusChange implements INodeType {
 				displayName: "Status Switch Builder",
 				name: "statusSwitchBuilderNotice",
 				type: "notice",
-				default:
-					"Need a ready-made Switch node per status label? Add the 'Status Column Switch Builder (FlowOffice)' node or visit https://app.flow-office.eu/n8n-docs/tools/status-switch-builder.",
+				default: buildStatusSwitchBuilderNoticeExpression({
+					boardIdExpression: '$parameter["boardId"]',
+					statusColumnKeyExpression: '$parameter["statusColumnKey"]',
+				}),
 				displayOptions: {
 					hide: {
 						boardId: [""],
